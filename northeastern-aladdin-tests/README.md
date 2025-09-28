@@ -106,17 +106,15 @@ Blends with general knowledge; assumes balanced data in disclaimers.
 ## Project Structure
 Based on the provided image, the current local structure is for testing/validation:
 
-
-
-
-
-To prepare for GitHub:
-* Add `/docs/` for `system_prompt.md` and `reflection.md`.
-* Add `/data/` for dummy uploaded files (e.g., CSVs/PDFs).
-* Add `/assets/` for images (e.g., `banner.png`).
-* Include `README.md` in root.
-
-*If this doesn't match your full structure (e.g., missing subfolders/files), please provide a tree command output or detailed list.*
+NORTHEASTERN-ALADDIN-TESTS/
+├── artifacts/                  # Empty or for generated artifacts
+├── responses/                  # Response-related files
+│   └── runs/                   # Subfolder for run logs (collapsed in image)
+├── specialized-ai-assistant_summary.csv  # Summary CSV, perhaps test results
+├── specialized-ai-assistant.json         # JSON for assistant config or output
+├── testjsoncode.json                     # Test JSON code/output
+├── validate_files.py                     # Python script for file validation
+└── validate.py                           # Additional validation script
 
 ---
 
