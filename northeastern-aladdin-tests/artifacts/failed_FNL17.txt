@@ -1,0 +1,1 @@
+{"id":"FNL17","actions_include":"Cap turnover at 5%","must_state_fee_application":"AUM pro-rata","citations":["MSCI ESG Ratings Methodology.pdf"]}

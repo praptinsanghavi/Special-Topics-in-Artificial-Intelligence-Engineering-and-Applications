@@ -1,0 +1,1 @@
+{"id":"FNL34","must_cite_msci":true,"no_fake_scores":true,"must_cite_from_uploads":true,"no_external_cites":true,"citations":["MSCI ESG Ratings Methodology.pdf"]}

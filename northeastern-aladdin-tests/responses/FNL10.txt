@@ -1,0 +1,1 @@
+{"id":"FNL10","must_list_resources":true,"must_cite_from_uploads":true,"no_external_cites":true,"citations":["MSCI ESG Ratings Methodology.pdf","Q1_2025_PitchBook_Private_Capital_Indexes_19837.pdf","Q1_2025_Global_Private_Market_Fundraising_Report_19314.pdf","202504BloombergIntelligenceTradingReport2025DeepDiveFinal.pdf"]}

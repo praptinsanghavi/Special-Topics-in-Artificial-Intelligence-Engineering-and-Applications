@@ -1,0 +1,1 @@
+{"id":"FNL32","must_reference_climate":true,"citations":["MSCI ESG Ratings Methodology.pdf","202504BloombergIntelligenceTradingReport2025DeepDiveFinal.pdf"]}

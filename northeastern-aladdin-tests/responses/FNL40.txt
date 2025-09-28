@@ -1,0 +1,1 @@
+{"id":"FNL40","must_disclose_missing_date":true,"citations":["SP500.csv","SP 500 Historical Data.csv"]}

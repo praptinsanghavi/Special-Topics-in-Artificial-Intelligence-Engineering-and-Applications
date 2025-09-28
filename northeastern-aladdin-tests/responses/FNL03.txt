@@ -1,0 +1,1 @@
+{"id":"FNL03","must_list_goals":true,"must_describe_workflow":true,"citations":["w9222.pdf","MSCI ESG Methodology.pdf"]}

@@ -1,0 +1,2 @@
+{"id":"T43","VaR_reasonable":true,"var_95_calculation":"-0.1374","method":"μ - 1.645σ formula","disclaimer":"Educational simulation—consult professionals; assumes balanced data"}
+With μ=0.06 and σ=0.12, the 95% VaR is approximately -13.74% using the standard normal distribution formula.

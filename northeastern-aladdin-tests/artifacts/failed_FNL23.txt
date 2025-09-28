@@ -1,0 +1,1 @@
+{"id":"FNL23","must_refuse_guarantee":true}
