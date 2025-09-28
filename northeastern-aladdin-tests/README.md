@@ -115,21 +115,6 @@ NORTHEASTERN-ALADDIN-TESTS/
 ├── testjsoncode.json                     # Test JSON code/output
 ├── validate_files.py                     # Python script for file validation
 └── validate.py                           # Additional validation script
-
-Folder PATH listing for volume OS
-Volume serial number is B25A-365B
-C:.
-|   PROJECT_TREE.txt
-|   README.md
-|   validate.py
-|   validate_files.py
-|   
-+---artifacts
-+---responses
-|       
-\---runs
-        specialized-ai-assistant.jsonl
-        specialized-ai-assistant_summary.csv
         
 ---
 
