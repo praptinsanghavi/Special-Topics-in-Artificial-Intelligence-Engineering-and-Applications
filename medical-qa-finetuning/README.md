@@ -145,21 +145,13 @@ python scripts/evaluate.py \
 medical-qa-finetuning/
 │
 ├── README.md                    # This file
-├── LICENSE                      # MIT License
-├── setup.py                     # Package setup
 ├── requirements.txt             # Python dependencies
-├── requirements-dev.txt        # Development dependencies
-├── Makefile                    # Common commands
 ├── .gitignore                  # Git ignore patterns
-├── .env.example                # Environment variables template
 │
 ├── configs/                    # Configuration files
-│   ├── training_config.yaml   # Training hyperparameters
-│   ├── model_config.yaml      # Model architecture settings
-│   └── deployment_config.yaml # Deployment settings
+│   └── training_config.yaml   # Training hyperparameters
 │
 ├── src/                        # Source code
-│   ├── __init__.py
 │   ├── data/                  # Data processing modules
 │   │   ├── __init__.py
 │   │   ├── preprocessor.py   # Dataset preparation
