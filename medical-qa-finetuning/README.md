@@ -184,12 +184,6 @@ medical-qa-finetuning/
 │   ├── evaluate.py            # Evaluation script
 │   └── deploy_gradio.py      # Deploy Gradio app
 │
-├── notebooks/                  # Jupyter notebooks
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_baseline_evaluation.ipynb
-│   ├── 03_training_analysis.ipynb
-│   └── complete_implementation.ipynb
-│
 ├── tests/                      # Unit tests
 │   ├── __init__.py
 │   ├── test_data_processing.py
@@ -200,21 +194,11 @@ medical-qa-finetuning/
 ├── deployment/                 # Deployment files
 │   └── Dockerfile             # Docker container
 │
-├── data/                       # Data directory
-│   ├── raw/                   # Original datasets
-│   ├── processed/             # Preprocessed data
-│   ├── augmented/             # Augmented data
-│   └── cache/                 # Cached files
-│
-├── models/                     # Model files
-│   ├── checkpoints/           # Training checkpoints
-│   ├── final/                 # Final models
-│   └── quantized/             # Quantized models
-│
 ├── results/                    # Results and outputs
 │   ├── figures/               # Visualizations
 │   ├── tables/                # Result tables
 │   ├── reports/               # Generated reports
+│   ├── code/              
 │   └── logs/                  # Training logs
 │
 ├── docs/                       # Documentation
