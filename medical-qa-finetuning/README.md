@@ -153,55 +153,36 @@ medical-qa-finetuning/
 │
 ├── src/                        # Source code
 │   ├── data/                  # Data processing modules
-│   │   ├── __init__.py
 │   │   ├── preprocessor.py   # Dataset preparation
-│   │   ├── augmentation.py   # Data augmentation
-│   │   └── dataloader.py     # Custom data loaders
+│   │   └── augmentation.py   # Data augmentation
 │   │
 │   ├── models/                # Model modules
-│   │   ├── __init__.py
 │   │   ├── model_selector.py # Model selection logic
-│   │   ├── qlora_model.py    # QLoRA implementation
-│   │   └── adapters.py       # LoRA adapter configs
+│   │   └── qlora_model.py    # QLoRA implementation
 │   │
 │   ├── training/              # Training modules
-│   │   ├── __init__.py
 │   │   ├── trainer.py        # Main training logic
-│   │   ├── callbacks.py      # Training callbacks
 │   │   └── hyperparameter_optimizer.py
 │   │
 │   ├── evaluation/            # Evaluation modules
-│   │   ├── __init__.py
 │   │   ├── evaluator.py      # Model evaluation
-│   │   ├── error_analyzer.py # Error analysis
-│   │   └── metrics.py        # Custom metrics
+│   │   └── error_analyzer.py # Error analysis
 │   │
 │   ├── medical/               # Medical-specific modules
-│   │   ├── __init__.py
 │   │   ├── safety_validator.py  # Safety validation
-│   │   ├── drug_interactions.py # Drug interaction DB
-│   │   └── clinical_guidelines.py
+│   │   └── drug_interactions.py # Drug interaction DB
 │   │
 │   ├── inference/             # Inference modules
-│   │   ├── __init__.py
-│   │   ├── pipeline.py       # Inference pipeline
-│   │   ├── gradio_app.py     # Gradio interface
-│   │   └── api.py            # REST API
+│   │   └── pipeline.py       # Inference pipeline
 │   │
 │   └── utils/                 # Utility modules
-│       ├── __init__.py
 │       ├── metrics_tracker.py # Metrics tracking
-│       ├── visualization.py   # Plotting utilities
-│       ├── logger.py          # Logging configuration
 │       └── documentation.py   # Doc generation
 │
 ├── scripts/                    # Executable scripts
 │   ├── train.py               # Main training script
 │   ├── evaluate.py            # Evaluation script
-│   ├── download_data.py       # Data download
-│   ├── hyperparameter_search.py
-│   ├── deploy_gradio.py      # Deploy Gradio app
-│   └── api_server.py          # Start API server
+│   └── deploy_gradio.py      # Deploy Gradio app
 │
 ├── notebooks/                  # Jupyter notebooks
 │   ├── 01_data_exploration.ipynb
@@ -217,15 +198,7 @@ medical-qa-finetuning/
 │   └── test_inference.py
 │
 ├── deployment/                 # Deployment files
-│   ├── Dockerfile             # Docker container
-│   ├── docker-compose.yml     # Docker compose
-│   ├── kubernetes/            # K8s manifests
-│   │   ├── deployment.yaml
-│   │   ├── service.yaml
-│   │   └── ingress.yaml
-│   └── scripts/               # Deployment scripts
-│       ├── build.sh
-│       └── deploy.sh
+│   └── Dockerfile             # Docker container
 │
 ├── data/                       # Data directory
 │   ├── raw/                   # Original datasets
@@ -245,17 +218,8 @@ medical-qa-finetuning/
 │   └── logs/                  # Training logs
 │
 ├── docs/                       # Documentation
-│   ├── api.md                 # API documentation
-│   ├── architecture.md        # System architecture
-│   ├── deployment.md          # Deployment guide
-│   └── troubleshooting.md     # Common issues
-│
-└── .github/                    # GitHub specific
-    ├── workflows/             # GitHub Actions
-    │   ├── test.yml          # Run tests
-    │   ├── lint.yml          # Code quality
-    │   └── deploy.yml        # Deployment
-    └── ISSUE_TEMPLATE/        # Issue templates
+│   └── api.md                 # API documentation
+└──
 ```
 
 ## Usage
