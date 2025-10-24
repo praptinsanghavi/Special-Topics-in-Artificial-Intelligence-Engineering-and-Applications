@@ -105,7 +105,7 @@ Blends with general knowledge; assumes balanced data in disclaimers.
 
 ## Project Structure
 Based on the provided image, the current local structure is for testing/validation:
-
+'''bash
 NORTHEASTERN-ALADDIN-TESTS/
 ├── artifacts/                  # Empty or for generated artifacts
 ├── responses/                  # Response-related files
@@ -115,7 +115,7 @@ NORTHEASTERN-ALADDIN-TESTS/
 ├── testjsoncode.json                     # Test JSON code/output
 ├── validate_files.py                     # Python script for file validation
 └── validate.py                           # Additional validation script
-        
+''' 
 ---
 
 ## Setup and Usage
