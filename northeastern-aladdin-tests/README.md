@@ -127,7 +127,7 @@ NORTHEASTERN-ALADDIN-TESTS/
 6.  **Dependencies:** None; Claude handles AI. Local scripts require Python.
 
 ## Demo Interaction (Assignment Section 7)
-Screen recording (3-5 minutes) showcasing functions: [Demo Video Link](#)
+Screen recording (3-5 minutes) showcasing functions: [Demo Video Link](#)https://youtu.be/5yxY4xSJjHM?si=GnRsQptO7WiHAnIb
 
 ---
 
