@@ -15,6 +15,7 @@ Production-grade medical question-answering system using QLoRA fine-tuning with 
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
+- [Video](#video)
 - [License](#license)
 
 ## Overview
@@ -437,6 +438,10 @@ mypy src/
 3. Commit changes (`git commit -m 'Add AmazingFeature'`)
 4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
+
+## Video
+
+Screen recording (3-5 minutes) showcasing functions: [[Demo Video Link](https://youtu.be/EJrIMasY6fo?si=Yf_I243lTpz7blr8)](#)
 
 ## License
 
