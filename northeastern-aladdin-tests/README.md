@@ -132,9 +132,7 @@ Screen recording (3-5 minutes) showcasing functions: [[Demo Video Link](https://
 ---
 
 ## Reflection (Assignment Section 8)
-"In developing **Northeastern Aladdin** on Claude, I emphasized a robust system prompt to enforce structured outputs and ethical guidelines, integrating fictional 2025 data for realism. Challenges included maintaining response limits, simulating future data accurately, and handling output formatting without native JSON validation—addressed via local Python scripts. Key takeaways: **Prompt engineering** is crucial for consistent AI behavior; **data integration** enhances educational value but requires bias awareness. This project honed my skills in AI personalization, highlighting Claude's strengths in knowledge-based assistants over CustomGPT for NEU access. Overall, it demonstrates how AI can democratize financial advice for students while promoting interdisciplinary connections." *(152 words)*
-
-*If this isn't your reflection, please share the text to replace.*
+In developing **Northeastern Aladdin** on Claude, I emphasized a robust system prompt to enforce structured outputs and ethical guidelines, integrating fictional 2025 data for realism. Challenges included maintaining response limits, simulating future data accurately, and handling output formatting without native JSON validation—addressed via local Python scripts. Key takeaways: **Prompt engineering** is crucial for consistent AI behavior; **data integration** enhances educational value but requires bias awareness. This project honed my skills in AI personalization, highlighting Claude's strengths in knowledge-based assistants over CustomGPT for NEU access. Overall, it demonstrates how AI can democratize financial advice for students while promoting interdisciplinary connections.
 
 ---
 
