@@ -185,22 +185,15 @@ medical-qa-finetuning/
 │   ├── evaluate.py            # Evaluation script
 │   └── deploy_gradio.py      # Deploy Gradio app
 │
-├── tests/                      # Unit tests
-│   ├── __init__.py
-│   ├── test_data_processing.py
-│   ├── test_models.py
-│   ├── test_safety_validator.py
-│   └── test_inference.py
-│
 ├── deployment/                 # Deployment files
 │   └── Dockerfile             # Docker container
 │
-├── results/                    # Results and outputs
-│   ├── figures/               # Visualizations
-│   ├── tables/                # Result tables
-│   ├── reports/               # Generated reports
-│   ├── code/              
-│   └── logs/                  # Training logs
+├── results/                     # Results and outputs
+│   └── electric-mountain-21/    # Model ran on WANDB
+│       ├── config.yaml          # Config parameters are your model's inputs
+│       ├── output.log           # Console output/training logs
+│       ├── wandb-metadata.json  # Comprehensive system and environment information
+│       ├── wandb-summary.json   # Summary metrics are your model's outputs
 │
 ├── docs/                       # Documentation
 │   └── api.md                 # API documentation
