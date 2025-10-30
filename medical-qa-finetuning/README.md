@@ -11,6 +11,7 @@ Production-grade medical question-answering system using QLoRA fine-tuning with 
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Performance Metrics](#performance-metrics)
+- [Hyperparameter Optimization](#hyperparameter-optimization)
 - [Error Analysis & Improvement Roadmap](#error-analysis-&-improvement-roadmap)
 - [API Documentation](#api-documentation)
 - [Testing](#testing)
@@ -321,6 +322,18 @@ evaluation:
 | Overly Verbose Responses | 98.5% | Implement length penalty during generation |
 | Medical Content Accuracy | Variable | Increase domain-specific training data |
 | High Perplexity | N/A | Add medical terminology post-processing |
+
+## Hyperparameter Optimization
+
+Successfully completed 3 trials with the following best configuration:
+- Learning Rate: 1e-4
+- Batch Size: 4
+- LoRA Rank: 32
+- LoRA Dropout: 0.1
+- Weight Decay: 0.05
+- Warmup Ratio: 0.05
+
+Trial results showed convergence around loss=1.75-2.33 across different configurations.
 
 ## Error Analysis & Improvement Roadmap
 
