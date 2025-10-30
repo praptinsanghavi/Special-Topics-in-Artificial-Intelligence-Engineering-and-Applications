@@ -1,0 +1,35 @@
+{
+  "os": "Linux-6.6.105+-x86_64-with-glibc2.35",
+  "python": "CPython 3.12.12",
+  "startedAt": "2025-10-29T12:56:08.036069Z",
+  "program": "Medical.ipynb",
+  "email": "praptisanghavi@gmail.com",
+  "root": "/content",
+  "host": "c8cfc6ab36ab",
+  "executable": "/usr/bin/python3",
+  "colab": "https://colab.research.google.com/notebook#fileId=1qPAbkKCT6U_S3ld5fl3igMR3TbKDKiS3",
+  "cpu_count": 4,
+  "cpu_count_logical": 8,
+  "gpu": "Tesla T4",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "253055008768",
+      "used": "42629787648"
+    }
+  },
+  "memory": {
+    "total": "54750433280"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "Tesla T4",
+      "memoryTotal": "16106127360",
+      "cudaCores": 2560,
+      "architecture": "Turing",
+      "uuid": "GPU-4033e6b5-057f-a7ff-fa4c-5a16f98a1cd2"
+    }
+  ],
+  "cudaVersion": "12.4",
+  "writerId": "t1r04s5g9mpuldua9nyn0m8li9zpxxo0"
+}
