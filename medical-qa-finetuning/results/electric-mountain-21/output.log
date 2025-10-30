@@ -1,0 +1,12 @@
+[34m[1mwandb[0m: Detected [huggingface_hub.inference, mcp] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+`torch_dtype` is deprecated! Use `dtype` instead!
+The model is already on multiple devices. Skipping the move to device specified in `args`.
+The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'pad_token_id': 50256}.
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+The model is already on multiple devices. Skipping the move to device specified in `args`.
+The model is already on multiple devices. Skipping the move to device specified in `args`.
+trainable params: 293,652,480 || all params: 3,073,336,320 || trainable%: 9.5548
+The model is already on multiple devices. Skipping the move to device specified in `args`.
+WARNING:__main__:Could not calculate perplexity - no valid samples
