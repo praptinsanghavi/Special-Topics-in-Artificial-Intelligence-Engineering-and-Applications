@@ -11,8 +11,10 @@ Production-grade medical question-answering system using QLoRA fine-tuning with 
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Performance Metrics](#performance-metrics)
+- [Error Analysis & Improvement Roadmap](#error-analysis-&-improvement-roadmap)
 - [API Documentation](#api-documentation)
 - [Testing](#testing)
+- [Known Limitations](#known-limitations)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [Video](#video)
@@ -20,14 +22,13 @@ Production-grade medical question-answering system using QLoRA fine-tuning with 
 
 ## Overview
 
-This system fine-tunes large language models for medical question-answering using Quantized Low-Rank Adaptation (QLoRA), achieving 90% memory reduction while maintaining performance with only 0.59% trainable parameters.
+This system fine-tunes large language models for medical question-answering using Quantized Low-Rank Adaptation (QLoRA), achieving 90% memory reduction while maintaining performance with only 9.55%  trainable parameters.
 
 ### Key Features
-- **QLoRA Implementation**: 90% memory reduction, 0.59% trainable parameters
-- **Medical Safety Validation**: Drug interaction checking, emergency detection, dosage verification
-- **Data Augmentation**: Medical synonym replacement, paraphrasing, context injection
-- **Comprehensive Evaluation**: ROUGE, BLEU, medical accuracy, perplexity metrics
-- **Production Ready**: Gradio interface, batch inference, Docker deployment
+- **QLoRA Implementation**: 9.55% trainable parameters (293M params)  
+- **Training Efficiency**: BFloat16 precision with gradient accumulation
+- **Comprehensive Evaluation**: Automated error pattern analysis with improvement suggestions
+- **Production Ready**: Sub-150ms P95 inference latency
 
 ### Technical Stack
 - **Base Model**: Microsoft Phi-2 (2.7B parameters)
@@ -116,8 +117,12 @@ python scripts/download_data.py --dataset medmcqa --output data/raw/
 python scripts/train.py \
     --dataset medmcqa \
     --model microsoft/phi-2 \
-    --samples 5000 \
-    --epochs 3
+    --samples 7000 \
+    --epochs 3 \
+    --batch-size 4 \
+    --learning-rate 1e-4 \
+    --lora-r 32 \
+    --precision bfloat16
 
 # Advanced training with custom config
 python scripts/train.py --config configs/training_config.yaml
@@ -263,9 +268,7 @@ response = pipeline.generate(
 ### Training Configuration (configs/training_config.yaml)
 ```yaml
 model:
-  name: "microsoft/phi-2"
-  quantization: "4bit"
-  dtype: "float16"
+  dtype: "bfloat16"  # Changed from float16
 
 dataset:
   name: "medmcqa"
@@ -276,14 +279,13 @@ training:
   num_epochs: 3
   batch_size: 4
   learning_rate: 1e-4
-  warmup_ratio: 0.1
-  gradient_accumulation_steps: 2
+  warmup_ratio: 0.05
+  weight_decay: 0.05
 
 lora:
-  r: 64
-  lora_alpha: 128
+  r: 32  # Changed from 64
+  lora_alpha: 64  # Adjusted for r=32
   lora_dropout: 0.1
-  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
 
 evaluation:
   metrics: ["rouge", "bleu", "accuracy", "perplexity"]
@@ -293,29 +295,50 @@ evaluation:
 ## Performance Metrics
 
 ### Training Results
-| Metric | Baseline | Fine-tuned | Improvement |
-|--------|----------|------------|-------------|
-| ROUGE-L | 0.312 | 0.465 | +49.0% |
-| BLEU | 0.198 | 0.342 | +72.7% |
-| Medical Accuracy | 0.624 | 0.847 | +35.7% |
-| Perplexity | 18.4 | 9.2 | -50.0% |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Final Training Loss | 1.797 | Converged after 3 epochs |
+| Evaluation Loss | 1.754 | Stable validation performance |
+| Accuracy Improvement | +22.3% | Relative improvement from baseline |
+| BLEU Improvement | +18.5% | Enhanced response quality |
+| ROUGE Improvement | +15.2% | Better content overlap |
+| Perplexity | 100 | Room for improvement |
 
 ### Resource Usage
 | Resource | Usage |
 |----------|-------|
-| GPU Memory | 8.2 GB |
-| Training Time | 3.5 hours |
+| Trainable Parameters | 293.65M (9.55%) |
+| Training Time | 11.7 hours (42,053s) |
+| Training Steps/Second | 0.062 |
+| Evaluation Steps/Second | 0.432 |
 | Inference Latency (P50) | 87ms |
 | Inference Latency (P95) | 145ms |
-| Model Size | 1.3 GB (quantized) |
-| Trainable Parameters | 16M (0.59%) |
+| Total FLOPs | 9.07e16 |
 
-### Safety Validation Performance
-| Check Type | Detection Rate | False Positive Rate |
-|------------|---------------|-------------------|
-| Drug Interactions | 94.2% | 3.1% |
-| Emergency Conditions | 98.7% | 1.2% |
-| Dosage Errors | 91.5% | 4.3% |
+### Identified Issues & Improvements
+| Issue | Frequency | Proposed Solution |
+|-------|-----------|-------------------|
+| Overly Verbose Responses | 98.5% | Implement length penalty during generation |
+| Medical Content Accuracy | Variable | Increase domain-specific training data |
+| High Perplexity | N/A | Add medical terminology post-processing |
+
+## Error Analysis & Improvement Roadmap
+
+### Common Error Patterns
+1. **Verbosity Issue (98.5% of responses)**
+   - Model generates unnecessarily long explanations
+   - Solution: Implement response length constraints
+
+2. **Medical Accuracy Concerns**
+   - Difficulty with technical medical terminology
+   - Solution: Domain-specific fine-tuning strategies
+
+### Recommended Improvements
+- [ ] Implement beam search for more stable generation
+- [ ] Add confidence scoring to identify uncertain predictions
+- [ ] Integrate medical terminology validation
+- [ ] Add conciseness examples to training data
+- [ ] Implement length penalty λ=0.8 during inference
 
 ## API Documentation
 
@@ -377,6 +400,16 @@ python tests/integration/test_end_to_end.py
 ```bash
 python tests/performance/benchmark.py --samples 1000
 ```
+
+## Known Limitations
+
+Based on current evaluation:
+- **Response Length**: Model tends to be overly verbose (mitigation in progress)
+- **Medical Accuracy**: Requires additional domain-specific training
+- **Perplexity**: Higher than target (100 vs goal of <20)
+- **Training Time**: ~12 hours on single GPU (consider distributed training)
+
+These limitations are actively being addressed in the development roadmap.
 
 ## Deployment
 
