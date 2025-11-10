@@ -18,6 +18,8 @@ A memory-optimized implementation of Deep Q-Learning (DQN) for the Atari Fishing
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Experiments](#experiments)
+- [Failed Experiments Analysis](#failed-experiments-analysis)
+- [Human Performance Comparison](#human-performance-comparison)
 - [Results](#results)
 - [Project Structure](#project-structure)
 - [Requirements](#requirements)
@@ -152,14 +154,42 @@ stats, rewards = test_trained_model(
 
 ## 🧪 Experiments
 
-| Experiment | Learning Rate | Gamma | Exploration | Episodes | Avg Score |
-|------------|--------------|--------|-------------|----------|-----------|
-| Baseline | 0.00025 | 0.8 | ε-greedy (0.99) | 5000 | 18.3 ± 6.5 |
-| High Gamma | 0.00025 | 0.99 | ε-greedy (0.99) | 5000 | 22.7 ± 7.1 |
-| High LR | 0.001 | 0.8 | ε-greedy (0.99) | 5000 | 15.2 ± 8.3 |
-| Boltzmann | 0.00025 | 0.8 | Softmax | 5000 | 20.1 ± 6.8 |
-| **UCB** | 0.00025 | 0.8 | UCB | 5000 | **25.4 ± 7.2** |
-| Slow Decay | 0.00025 | 0.8 | ε-greedy (0.995) | 5000 | 19.8 ± 6.9 |
+| Experiment | Learning Rate | Gamma | Exploration | Episodes | Avg Score | Win Rate |
+|------------|--------------|--------|-------------|----------|-----------|----------|
+| Baseline | 0.00025 | 0.8 | ε-greedy (0.99) | 5000 | 4.66 | 95.0% |
+| High Gamma | 0.00025 | 0.99 | ε-greedy (0.99) | 5000 | 5.26 | 100.0% |
+| **High LR** | **0.001** | **0.8** | **ε-greedy (0.99)** | **5000** | **6.00** | **100.0%** |
+| Boltzmann* | 0.00025 | 0.8 | Softmax | 5000 | 0.00 | 0.0% |
+| UCB | 0.00025 | 0.8 | UCB | 5000 | 6.00 | 100.0% |
+| Slow Decay* | 0.00025 | 0.8 | ε-greedy (0.995) | 5000 | 0.00 | 0.0% |
+
+*Note: Boltzmann and Slow Decay experiments failed to converge
+
+## ❗ Failed Experiments Analysis
+
+### Boltzmann Exploration (0% Win Rate)
+- **Issue**: Temperature parameter likely too high, causing over-exploration
+- **Symptoms**: Average reward of 0.00 across 100 test episodes
+- **Solution**: Reduce initial temperature from 1.0 to 0.5, faster decay rate
+
+### Slow Decay ε-greedy (0% Win Rate)  
+- **Issue**: Epsilon decay too slow (0.995), still exploring heavily at episode 5000
+- **Symptoms**: Final epsilon still too high, preventing exploitation
+- **Solution**: Use faster decay (0.99) or implement epsilon scheduling
+
+Despite these failures, 4 out of 6 experiments succeeded, exceeding the assignment requirement of 2 working models.
+
+## 📊 Human Performance Comparison
+
+| Level | Score Range | Our Best Model |
+|-------|-------------|----------------|
+| Random | < 0 | ✅ Exceeded |
+| **Beginner** | **0-10** | **✅ Achieved (6.00)** |
+| Novice | 10-25 | ❌ Not reached |
+| Amateur | 25-50 | ❌ Not reached |
+| Expert | 50+ | ❌ Not reached |
+
+Our best agents (High LR and UCB) achieved consistent positive scores, reaching Beginner level performance.
 
 ## 📊 Results
 
@@ -174,10 +204,17 @@ stats, rewards = test_trained_model(
 </p>
 
 ### Key Findings
-- **UCB exploration** achieved best performance (25.4 average score)
-- **Higher gamma (0.99)** improved long-term planning
-- **Memory optimization** reduced RAM usage by 75% without performance loss
-- Agent reached **Novice Human Level** (10-25 score range)
+- **High Learning Rate (0.001)** achieved best performance alongside UCB
+- **UCB exploration** matched best performance with consistent rewards
+- **Higher gamma (0.99)** improved performance over baseline (0.8)
+- **Memory optimization** successfully managed Colab constraints
+- Agent achieved **Beginner Level** performance (score > 0)
+  
+### Key Achievements
+- 🏆 **Best Performance**: Average score of 6.00 (High LR & UCB models)
+- 🚀 **6 Experiments**: 30,000 training episodes completed
+- 💾 **Memory Efficient**: Successfully ran in Google Colab (59% RAM usage)
+- ✅ **4/6 Success Rate**: Four models achieved positive scores
 
 ## 📁 Project Structure
 
@@ -313,9 +350,8 @@ in the Software without restriction...
 ## 🙏 Acknowledgments
 
 ### Academic
-- **Course**: LLM Agents & Deep Q-Learning, Northeastern University
-- **Instructor**: [Instructor Name]
-- **Teaching Assistants**: [TA Names]
+- **Course**: Special Topics in Artifical Intelligence Engineering and Application, Northeastern University
+- **Instructor**: [Nik Bear Brown](https://github.com/nikbearbrown)
 
 ### Technical References
 - [Mnih et al. (2015)](https://www.nature.com/articles/nature14236) - Human-level control through deep reinforcement learning
@@ -333,20 +369,20 @@ If you use this code in your research, please cite:
 
 ```bibtex
 @misc{dqn-fishingderby-2024,
-  author = {[Your Name]},
+  author = {Prapti Sanghavi},
   title = {Deep Q-Learning for Atari FishingDerby},
-  year = {2024},
+  year = {2025},
   publisher = {GitHub},
-  url = {https://github.com/yourusername/dqn-fishingderby}
+  url = {https://github.com/praptinsanghavi/dqn-fishingderby}
 }
 ```
 
 ## 📞 Contact
 
-- **Author**: [Your Name]
-- **Email**: [your.email@northeastern.edu]
-- **LinkedIn**: [linkedin.com/in/yourprofile](https://linkedin.com)
-- **GitHub**: [@yourusername](https://github.com/yourusername)
+- **Author**: Prapti Sanghavi
+- **Email**: [sanghavi.pr@northeastern.edu]
+- **LinkedIn**: [linkedin.com/in/yourprofile](https://www.linkedin.com/in/prapti-sanghavi/)
+- **GitHub**: [@praptinsanghavi](https://github.com/praptinsanghavi)
 
 ---
 
