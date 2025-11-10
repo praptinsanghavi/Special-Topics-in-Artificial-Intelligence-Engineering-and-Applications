@@ -195,12 +195,12 @@ Our best agents (High LR and UCB) achieved consistent positive scores, reaching 
 
 ### Performance Comparison
 <p align="center">
-  <img src="assets/human_vs_bot_comparison.png" alt="Human vs Bot Performance" width="800"/>
+  <img src="results/figures/human_vs_bot_comparison.png" alt="Human vs Bot Performance" width="800"/>
 </p>
 
 ### Training Progress
 <p align="center">
-  <img src="assets/training_comparison.png" alt="Training Progress" width="800"/>
+  <img src="results/figures/training_comparison.png" alt="Training Progress" width="800"/>
 </p>
 
 ### Key Findings
