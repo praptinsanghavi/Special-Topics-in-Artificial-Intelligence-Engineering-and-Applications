@@ -226,12 +226,11 @@ dqn-fishingderby/
 │   ├── test.py
 │   └── video_recorder.py
 │         
-├── 📂 models/                   # Saved model checkpoints
-│   ├── final_model_UCB.pt
-│   ├── final_model_Boltzmann.pt
-│   └── ...
-│
 ├── 📂 results/                  # Experiment results
+│   ├── figures/
+│   │   ├── human_vs_bot_comparison.png
+│   │   └── training_comparison.png
+│   ├── figures/
 │   ├── all_experiments.json
 │   ├── test_results.json
 │   └── training_logs/
