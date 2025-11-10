@@ -230,31 +230,50 @@ dqn-fishingderby/
 │   ├── figures/
 │   │   ├── human_vs_bot_comparison.png
 │   │   └── training_comparison.png
-│   ├── figures/
-│   ├── all_experiments.json
-│   ├── test_results.json
-│   └── training_logs/
+│   ├── models/
+│   │   ├── final_model_Baseline_gamma08.pt
+│   │   ├── final_model_Boltzmann.pt
+│   │   ├── final_model_HighGamma_099.pt
+│   │   ├── final_model_HighLR_001.pt
+│   │   ├── final_model_SlowDecay_0995.pt
+│   │   ├── final_model_UCB.pt
+│   │   └── checkpoints/
+│   │       ├── checkpoint_HighLR_001_3500.pt
+│   │       ├── checkpoint_HighLR_001_3500.pt
+│   │       ├── checkpoint_HighLR_001_3500.pt
+│   │       ├── final_model_HighLR_001.pt
+│   │       ├── final_model_SlowDecay_0995.pt
+│   │       └── final_model_UCB.pt
+│   ├─videos/
+│   │   ├── High LR (α=0.001)_episode_1.mp4
+│   │   ├── High LR (α=0.001)_episode_2.mp4
+│   │   └── High LR (α=0.001)_episode_3.mp4
+│   │
+│   ├── all_experiments_results.json
+│   ├── results_Baseline_gamma08.json
+│   ├── results_Boltzmann.json
+│   ├── results_HighGamma_099.json
+│   ├── results_HighLR_001.json
+│   ├── results_SlowDecay_0995.json
+│   └── results_UCB.json
 │
-├── 📂 videos/                   # Gameplay recordings
-│   ├── UCB_episode_1.mp4
-│   ├── UCB_episode_2.mp4
-│   └── ...
+├── 📂 scripts/                   
+│   └── generate_report.py
 │
-├── 📂 assets/                   # README images
-│   ├── gameplay.gif
-│   ├── architecture.png
-│   └── ...
+├── 📂 src/                  
+│   ├── dqn_model.py
+│   ├── exploration.py
+│   ├── memory_buffer.py
+│   └── preprocessing.py
 │
-├── 📂 notebooks/                # Jupyter/Colab notebooks
-│   ├── DQN_Complete_Pipeline.ipynb
-│   ├── DQN_Experiments.ipynb
-│   └── DQN_Analysis.ipynb
+├── 📂 training/                
+│   ├── config.py
+│   ├── train.py
+│   └── train_memory_optimized.py
 │
 ├── 📄 requirements.txt          # Package dependencies
-├── 📄 LICENSE                   # MIT License
-├── 📄 README.md                # This file
-├── 📄 .gitignore              # Git ignore rules
-└── 📄 assignment_report.txt    # Detailed assignment answers
+├── 📄 README.md                 # This file
+└── 📄 .gitignore                # Git ignore rules
 ```
 
 ## 📦 Requirements
