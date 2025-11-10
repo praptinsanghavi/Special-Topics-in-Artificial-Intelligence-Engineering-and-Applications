@@ -221,14 +221,11 @@ Our best agents (High LR and UCB) achieved consistent positive scores, reaching 
 ```
 dqn-fishingderby/
 │
-├── 📄 main.py                    # Main execution pipeline
-├── 📄 dqn_agent.py              # DQN network architecture
-├── 📄 dqn_trainer.py            # Training logic
-├── 📄 dqn_tester.py             # Testing and evaluation
-├── 📄 visualization.py          # Plotting and video generation
-├── 📄 memory_utils.py           # Memory management utilities
-├── 📄 report_generator.py       # Assignment report generation
-│
+├── 📂 evaluation/
+│   ├── human_comparson.py
+│   ├── test.py
+│   └── video_recorder.py
+│         
 ├── 📂 models/                   # Saved model checkpoints
 │   ├── final_model_UCB.pt
 │   ├── final_model_Boltzmann.pt
