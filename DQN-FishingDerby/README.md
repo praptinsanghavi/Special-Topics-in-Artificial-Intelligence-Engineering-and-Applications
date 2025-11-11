@@ -459,5 +459,5 @@ If you use this code in your research, please cite:
 <p align="center">
   <img src="https://img.shields.io/badge/Grade-A%2B-brightgreen" alt="Grade"/>
   <img src="https://img.shields.io/badge/Status-Complete-success" alt="Status"/>
-  <img src="https://img.shields.io/badge/Year-2024-blue" alt="Year"/>
+  <img src="https://img.shields.io/badge/Year-2025-blue" alt="Year"/>
 </p>
