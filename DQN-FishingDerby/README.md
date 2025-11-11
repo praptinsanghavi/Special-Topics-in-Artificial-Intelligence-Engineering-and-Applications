@@ -447,7 +447,7 @@ If you use this code in your research, please cite:
 
 - **Author**: Prapti Sanghavi
 - **Email**: [sanghavi.pr@northeastern.edu]
-- **LinkedIn**: [linkedin.com/in/yourprofile](https://www.linkedin.com/in/prapti-sanghavi/)
+- **LinkedIn**: [LinkedIn](https://www.linkedin.com/in/prapti-sanghavi/)
 - **GitHub**: [@praptinsanghavi](https://github.com/praptinsanghavi)
 
 ---
