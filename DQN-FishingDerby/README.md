@@ -446,7 +446,7 @@ If you use this code in your research, please cite:
 ## 📞 Contact
 
 - **Author**: Prapti Sanghavi
-- **Email**: [sanghavi.pr@northeastern.edu]
+- **Email**: [Email ID](praptisanghavi@gmail.com)
 - **LinkedIn**: [LinkedIn](https://www.linkedin.com/in/prapti-sanghavi/)
 - **GitHub**: [@praptinsanghavi](https://github.com/praptinsanghavi)
 
