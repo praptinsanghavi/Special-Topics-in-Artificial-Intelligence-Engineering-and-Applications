@@ -1,0 +1,358 @@
+# Houston Flash Flood Monitoring System - Requirements
+# Dependencies and Tools Required for System Operation
+
+## Core Platform
+n8n==1.60.0
+# Workflow automation platform
+# Installation: npm install n8n -g OR docker pull n8nio/n8n
+# Documentation: https://docs.n8n.io/
+
+## External APIs (No Installation Required - Free Tier)
+
+### Data Sources
+# USGS Water Services API
+# Endpoint: https://waterservices.usgs.gov/nwis/iv/
+# Documentation: https://waterservices.usgs.gov/docs/
+# Rate Limit: Undocumented (respectful usage recommended)
+# Cost: FREE
+
+# NOAA Tides and Currents API
+# Endpoint: https://api.tidesandcurrents.noaa.gov/api/prod/
+# Documentation: https://tidesandcurrents.noaa.gov/api/
+# Rate Limit: Undocumented (respectful usage recommended)
+# Cost: FREE
+
+# National Weather Service API
+# Endpoint: https://api.weather.gov/
+# Documentation: https://www.weather.gov/documentation/services-web-api
+# Rate Limit: Undocumented (respectful usage recommended)
+# Cost: FREE
+
+### AI Models
+# Google Gemini API
+# Model: gemini-1.5-flash
+# Documentation: https://ai.google.dev/
+# Rate Limit: 60 requests/minute (free tier)
+# Cost: FREE (within quotas)
+
+### Storage & Communication
+# Google Sheets API
+# Documentation: https://developers.google.com/sheets/api
+# Authentication: OAuth 2.0
+# Cost: FREE (5 million cells)
+
+# Gmail API (for email alerts)
+# Documentation: https://developers.google.com/gmail/api
+# Authentication: OAuth 2.0
+# Cost: FREE (standard Gmail limits)
+
+## n8n Node Requirements
+# All nodes are built into n8n, no additional installation required
+
+### Built-in Nodes Used:
+# - HTTP Request (v4.2)
+# - Google Sheets (v4.4)
+# - Send Email / Gmail (v2.1)
+# - Schedule Trigger (v1.2)
+# - IF (v2.2)
+# - Code (v2.0) - JavaScript execution
+# - Split Out (v1.0)
+# - Merge (v3.0)
+# - Switch (v3.1)
+# - No Operation (v1.0)
+
+## Custom Code Dependencies (JavaScript in Code Nodes)
+# No external npm packages required
+# All code uses vanilla JavaScript
+# Compatible with n8n's Node.js environment (v18+)
+
+## System Requirements
+
+### Minimum Hardware:
+# CPU: 1 core (2+ recommended)
+# RAM: 512 MB (1 GB+ recommended)
+# Storage: 100 MB for n8n + workflow definitions
+# Network: Stable internet connection
+
+### Minimum Software:
+# Operating System: Linux, macOS, or Windows
+# Node.js: v18.0.0 or higher (for n8n)
+# Docker: 20.10+ (if using Docker deployment)
+
+## Optional Components
+
+### For Enhanced Features:
+# Twilio API (for SMS alerts - not currently implemented)
+# Cost: $0.0075 per SMS
+# Documentation: https://www.twilio.com/docs/
+
+# Slack Webhook (for team notifications - not currently implemented)
+# Cost: FREE
+# Documentation: https://api.slack.com/messaging/webhooks
+
+# PagerDuty API (for emergency escalation - not currently implemented)
+# Cost: Starts at $21/user/month
+# Documentation: https://developer.pagerduty.com/
+
+## Development Tools (Optional)
+
+### For Development and Testing:
+# Git (version control)
+# VS Code or similar editor (for documentation editing)
+# Postman or curl (for API testing)
+# Chrome/Firefox DevTools (for debugging)
+
+## API Credentials Required
+
+### Setup Instructions:
+
+1. **Google Gemini API Key**
+   - Visit: https://ai.google.dev/
+   - Create project
+   - Enable Gemini API
+   - Generate API key
+   - Add to n8n credentials
+
+2. **Google Sheets OAuth**
+   - Visit: https://console.cloud.google.com/
+   - Create project
+   - Enable Google Sheets API
+   - Create OAuth 2.0 credentials
+   - Add to n8n credentials
+
+3. **Gmail OAuth (for email alerts)**
+   - Same Google Cloud project as above
+   - Enable Gmail API
+   - Use same OAuth credentials
+   - Add to n8n credentials
+
+## Installation Steps
+
+### Option 1: Docker (Recommended)
+```bash
+# Pull n8n image
+docker pull n8nio/n8n
+
+# Run n8n
+docker run -it --rm \
+  --name n8n \
+  -p 5678:5678 \
+  -v ~/.n8n:/home/node/.n8n \
+  n8nio/n8n
+```
+
+### Option 2: npm (Global Installation)
+```bash
+# Install n8n globally
+npm install n8n -g
+
+# Start n8n
+n8n start
+```
+
+### Option 3: npm (Local Installation)
+```bash
+# Create project directory
+mkdir flood-monitoring
+cd flood-monitoring
+
+# Initialize npm project
+npm init -y
+
+# Install n8n locally
+npm install n8n
+
+# Start n8n
+npx n8n start
+```
+
+## Configuration
+
+### Environment Variables:
+# N8N_BASIC_AUTH_ACTIVE=true
+# N8N_BASIC_AUTH_USER=admin
+# N8N_BASIC_AUTH_PASSWORD=your-secure-password
+# N8N_PORT=5678
+# N8N_PROTOCOL=http
+# WEBHOOK_URL=http://localhost:5678/
+
+### Google Sheets Setup:
+# Create spreadsheet: "Houston Flood Monitoring - Historical Data"
+# Create 6 sheets with headers as documented in README.md
+
+## Deployment Options
+
+### Production Deployment:
+# Recommended: Docker on cloud VM (AWS, GCP, Azure)
+# Alternative: Dedicated Linux server
+# Not Recommended: Personal computer (unreliable uptime)
+
+### For 24/7 Operation:
+# Use process manager (PM2, systemd, Docker restart policies)
+# Set up monitoring (UptimeRobot, Pingdom)
+# Configure automatic restarts on failure
+
+## Security Considerations
+
+### Credentials Management:
+# Store API keys in n8n credentials vault (encrypted)
+# Never commit credentials to version control
+# Use environment variables for sensitive data
+# Enable n8n basic authentication in production
+
+### Network Security:
+# Use HTTPS in production (Let's Encrypt SSL)
+# Restrict n8n dashboard access (IP whitelist)
+# Use firewall rules to limit exposed ports
+# Keep n8n updated to latest version
+
+## Monitoring & Logging
+
+### Built-in Monitoring:
+# n8n execution logs (in dashboard)
+# Workflow execution history
+# Error logs in n8n console
+
+### External Monitoring:
+# Google Sheets for system health logs
+# Email alerts for critical failures
+# Optional: External uptime monitoring
+
+## Backup & Recovery
+
+### Regular Backups:
+# Export workflow JSON (via n8n dashboard)
+# Backup Google Sheets (Google Takeout)
+# Export n8n credentials (encrypted)
+# Version control for workflow definitions
+
+### Disaster Recovery:
+# Keep workflow JSON exports in version control
+# Document credentials and API keys securely
+# Have tested restore procedure
+
+## Performance Tuning
+
+### For High-Volume Deployments:
+# Increase n8n process memory (NODE_OPTIONS=--max-old-space-size=4096)
+# Use Redis for queue management
+# Implement rate limiting on external APIs
+# Consider n8n Cloud for managed scaling
+
+## Troubleshooting
+
+### Common Issues:
+
+1. **API Rate Limits**
+   - Solution: Implemented retry with backoff
+   - Monitoring: Track failures in System Health Log
+
+2. **Google Sheets Quota**
+   - Limit: 5 million cells
+   - Current usage: ~35K rows/year
+   - Years until limit: ~140 years
+
+3. **Gemini API Quota**
+   - Limit: 60 requests/minute
+   - Current usage: ~3 requests/15 minutes
+   - Plenty of headroom
+
+4. **Email Sending Limits**
+   - Gmail: 500 emails/day
+   - Current usage: <10 emails/day
+   - No issues expected
+
+## Cost Analysis
+
+### Monthly Operating Costs:
+# n8n (self-hosted): $0
+# Google Gemini API: $0 (within free tier)
+# Google Sheets: $0 (within free tier)
+# Gmail: $0 (within free tier)
+# External APIs: $0 (all free public APIs)
+# Total: $0/month
+
+### Paid Upgrade Paths (Optional):
+# n8n Cloud: $20/month (managed hosting)
+# Gemini API Pro: $0.0001/1K tokens (higher limits)
+# Google Workspace: $6/user/month (business features)
+# Twilio SMS: $0.0075/SMS (for SMS alerts)
+
+## Support & Resources
+
+### Official Documentation:
+# n8n: https://docs.n8n.io/
+# Google Gemini: https://ai.google.dev/docs
+# Google Sheets API: https://developers.google.com/sheets/api
+# USGS: https://waterservices.usgs.gov/docs/
+
+### Community Resources:
+# n8n Community Forum: https://community.n8n.io/
+# n8n Discord: https://discord.gg/n8n
+# Stack Overflow: Tag [n8n]
+
+### Project Repository:
+# (Add your GitHub/GitLab URL here)
+
+## Version History
+
+### v1.0 (November 2025)
+# Initial release
+# 2 workflows (Main + Health Monitor)
+# 3 AI agents
+# 10+ built-in tools
+# 5 custom tools
+# Zero-cost operation
+
+## License
+
+# Academic project - Educational use
+# External APIs: Subject to their respective terms of service
+# n8n: Fair-code license (Sustainable Use License)
+
+---
+
+## Quick Start
+
+### Minimal Setup (5 minutes):
+1. Install n8n (Docker or npm)
+2. Start n8n (localhost:5678)
+3. Import workflow JSON files
+4. Add Google Sheets credential
+5. Add Gemini API credential
+6. Add Gmail credential
+7. Create Google Sheet with 6 sheets
+8. Activate workflows
+
+### Full Setup (30 minutes):
+1. Complete minimal setup
+2. Configure Escalation Contacts sheet
+3. Update email addresses in nodes
+4. Test manual execution
+5. Verify data logging
+6. Configure alert preferences
+7. Set up monitoring dashboard
+8. Document deployment
+
+---
+
+## Maintenance
+
+### Regular Tasks:
+# Daily: Check System Health Log
+# Weekly: Review Alert Acknowledgment Log
+# Monthly: Analyze Accuracy Metrics
+# Quarterly: Update gauge list if needed
+# Yearly: Export backups and archive
+
+### Updates:
+# n8n: Update when stable releases available
+# Workflows: Export JSON after changes
+# Documentation: Keep README.md current
+# Dependencies: Monitor for security updates
+
+---
+
+**Last Updated:** November 21, 2025
+**Version:** 1.0
+**Maintainer:** [Your Name]
