@@ -1,0 +1,927 @@
+{
+  "name": "System Health Monitor - Flash Flood Evacuation System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "59c2ed31-7031-481c-a308-baa3d5d22796",
+      "name": "Every 1 Hour"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2042560573,
+          "mode": "list",
+          "cachedResultName": "System Health Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=2042560573"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e37c262b-b361-46ed-9464-b2a8d9834f5e",
+      "name": "Get Recent Health Logs",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// SYSTEM HEALTH ANALYZER\n// Monitors health logs and detects issues\n// ========================================\n\nconst healthLogs = $input.all();\n\nif (!healthLogs || healthLogs.length === 0) {\n  return [{\n    json: {\n      alert_level: \"CRITICAL\",\n      alert_title: \"🚨 NO HEALTH DATA\",\n      alert_message: \"System Health Log is empty! Main workflow may not be running.\",\n      send_alert: true,\n      issues: [\"No health data available\"],\n      system_status: \"UNKNOWN\"\n    }\n  }];\n}\n\n// Sort by timestamp (newest first)\nconst sortedLogs = healthLogs\n  .map(log => log.json)\n  .sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));\n\nconst now = new Date();\nconst oneHourAgo = new Date(now - 60 * 60 * 1000);\nconst twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);\nconst twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);\n\n// Get most recent log\nconst latestLog = sortedLogs[0];\nconst latestTime = new Date(latestLog.Timestamp);\nconst minutesSinceLastExecution = (now - latestTime) / (1000 * 60);\n\n// Get logs from different time periods\nconst logsLastHour = sortedLogs.filter(log => new Date(log.Timestamp) >= oneHourAgo);\nconst logsLastTwoHours = sortedLogs.filter(log => new Date(log.Timestamp) >= twoHoursAgo);\nconst logsLast24Hours = sortedLogs.filter(log => new Date(log.Timestamp) >= twentyFourHoursAgo);\n\n// ========================================\n// 1. DEAD MAN'S SWITCH - Check if system is alive\n// ========================================\nlet deadManSwitch = {\n  status: \"OK\",\n  issue: null\n};\n\nif (minutesSinceLastExecution > 120) { // 2 hours\n  deadManSwitch = {\n    status: \"CRITICAL\",\n    issue: `Main workflow hasn't run in ${Math.round(minutesSinceLastExecution)} minutes! System may be down.`\n  };\n} else if (minutesSinceLastExecution > 30) { // 30 minutes\n  deadManSwitch = {\n    status: \"WARNING\",\n    issue: `Main workflow delayed. Last execution was ${Math.round(minutesSinceLastExecution)} minutes ago (expected every 15 min).`\n  };\n}\n\n// ========================================\n// 2. HEALTH SCORE ANALYSIS\n// ========================================\nlet healthScoreAnalysis = {\n  status: \"OK\",\n  issues: []\n};\n\n// Current health score\nconst currentHealthScore = parseInt(latestLog.Health_Score) || 0;\n\n// Average health score last hour\nconst avgHealthLastHour = logsLastHour.length > 0\n  ? logsLastHour.reduce((sum, log) => sum + (parseInt(log.Health_Score) || 0), 0) / logsLastHour.length\n  : 0;\n\n// Average health score last 24 hours\nconst avgHealthLast24h = logsLast24Hours.length > 0\n  ? logsLast24Hours.reduce((sum, log) => sum + (parseInt(log.Health_Score) || 0), 0) / logsLast24Hours.length\n  : 0;\n\nif (currentHealthScore < 40) {\n  healthScoreAnalysis.status = \"CRITICAL\";\n  healthScoreAnalysis.issues.push(`Current health score is ${currentHealthScore}/100 (CRITICAL)`);\n} else if (currentHealthScore < 60) {\n  healthScoreAnalysis.status = \"WARNING\";\n  healthScoreAnalysis.issues.push(`Current health score is ${currentHealthScore}/100 (WARNING)`);\n} else if (avgHealthLastHour < 60) {\n  healthScoreAnalysis.status = \"WARNING\";\n  healthScoreAnalysis.issues.push(`Average health score dropped to ${Math.round(avgHealthLastHour)}/100 in last hour`);\n}\n\n// Detect declining trend\nif (avgHealthLastHour < avgHealthLast24h - 15) {\n  healthScoreAnalysis.issues.push(`Health declining: ${Math.round(avgHealthLast24h)} (24h avg) → ${Math.round(avgHealthLastHour)} (1h avg)`);\n  if (healthScoreAnalysis.status === \"OK\") {\n    healthScoreAnalysis.status = \"WARNING\";\n  }\n}\n\n// ========================================\n// 3. DATA SOURCE ANALYSIS\n// ========================================\nlet dataSourceAnalysis = {\n  status: \"OK\",\n  issues: []\n};\n\n// Check if primary sources are consistently failing\nconst usgsFailures = logsLastTwoHours.filter(log => log.USGS_Status === \"UNAVAILABLE\").length;\nconst noaaFailures = logsLastTwoHours.filter(log => log.NOAA_Status === \"UNAVAILABLE\").length;\nconst bothPrimaryFailed = logsLastTwoHours.filter(log => \n  log.USGS_Status === \"UNAVAILABLE\" && log.NOAA_Status === \"UNAVAILABLE\"\n).length;\n\nif (bothPrimaryFailed > 0) {\n  dataSourceAnalysis.status = \"CRITICAL\";\n  dataSourceAnalysis.issues.push(`CRITICAL: Both USGS and NOAA failed ${bothPrimaryFailed} time(s) in last 2 hours!`);\n}\n\nif (usgsFailures >= 4) {\n  dataSourceAnalysis.status = \"WARNING\";\n  dataSourceAnalysis.issues.push(`USGS unavailable ${usgsFailures} time(s) in last 2 hours`);\n}\n\nif (noaaFailures >= 4) {\n  if (dataSourceAnalysis.status === \"OK\") dataSourceAnalysis.status = \"WARNING\";\n  dataSourceAnalysis.issues.push(`NOAA unavailable ${noaaFailures} time(s) in last 2 hours`);\n}\n\n// Check if stuck in failover mode\nconst failoverActive = logsLastHour.filter(log => log.Failover_Active === \"TRUE\" || log.Failover_Active === true).length;\nif (failoverActive === logsLastHour.length && logsLastHour.length > 2) {\n  dataSourceAnalysis.issues.push(`System stuck in failover mode for ${logsLastHour.length} consecutive runs`);\n  if (dataSourceAnalysis.status === \"OK\") dataSourceAnalysis.status = \"WARNING\";\n}\n\n// ========================================\n// 4. PERFORMANCE ANALYSIS\n// ========================================\nlet performanceAnalysis = {\n  status: \"OK\",\n  issues: []\n};\n\n// Check execution times\nconst recentExecutionTimes = logsLastHour.map(log => parseFloat(log.Execution_Time_Sec) || 0);\nconst avgExecutionTime = recentExecutionTimes.reduce((a, b) => a + b, 0) / recentExecutionTimes.length;\nconst maxExecutionTime = Math.max(...recentExecutionTimes);\n\nif (avgExecutionTime > 90) {\n  performanceAnalysis.status = \"WARNING\";\n  performanceAnalysis.issues.push(`Slow performance: Average execution ${Math.round(avgExecutionTime)}s (expected <90s)`);\n}\n\nif (maxExecutionTime > 180) {\n  performanceAnalysis.status = \"WARNING\";\n  performanceAnalysis.issues.push(`Very slow execution detected: ${Math.round(maxExecutionTime)}s`);\n}\n\n// ========================================\n// 5. ERROR ANALYSIS\n// ========================================\nlet errorAnalysis = {\n  status: \"OK\",\n  issues: []\n};\n\nconst logsWithErrors = logsLastTwoHours.filter(log => log.Has_Errors === \"TRUE\" || log.Has_Errors === true);\nconst errorRate = (logsWithErrors.length / logsLastTwoHours.length) * 100;\n\nif (errorRate > 50) {\n  errorAnalysis.status = \"CRITICAL\";\n  errorAnalysis.issues.push(`HIGH ERROR RATE: ${Math.round(errorRate)}% of executions have errors`);\n} else if (errorRate > 25) {\n  errorAnalysis.status = \"WARNING\";\n  errorAnalysis.issues.push(`Elevated error rate: ${Math.round(errorRate)}% of executions have errors`);\n}\n\n// Check recent consecutive errors\nlet consecutiveErrors = 0;\nfor (const log of sortedLogs.slice(0, 10)) {\n  if (log.Has_Errors === \"TRUE\" || log.Has_Errors === true) {\n    consecutiveErrors++;\n  } else {\n    break;\n  }\n}\n\nif (consecutiveErrors >= 5) {\n  errorAnalysis.status = \"CRITICAL\";\n  errorAnalysis.issues.push(`${consecutiveErrors} consecutive executions with errors!`);\n} else if (consecutiveErrors >= 3) {\n  if (errorAnalysis.status === \"OK\") errorAnalysis.status = \"WARNING\";\n  errorAnalysis.issues.push(`${consecutiveErrors} consecutive executions with errors`);\n}\n\n// ========================================\n// 6. DETERMINE OVERALL STATUS & BUILD ALERT\n// ========================================\n\nconst allStatuses = [\n  deadManSwitch.status,\n  healthScoreAnalysis.status,\n  dataSourceAnalysis.status,\n  performanceAnalysis.status,\n  errorAnalysis.status\n];\n\nlet overallStatus = \"HEALTHY\";\nif (allStatuses.includes(\"CRITICAL\")) {\n  overallStatus = \"CRITICAL\";\n} else if (allStatuses.includes(\"WARNING\")) {\n  overallStatus = \"WARNING\";\n}\n\n// Collect all issues\nconst allIssues = [\n  ...(deadManSwitch.issue ? [deadManSwitch.issue] : []),\n  ...healthScoreAnalysis.issues,\n  ...dataSourceAnalysis.issues,\n  ...performanceAnalysis.issues,\n  ...errorAnalysis.issues\n];\n\n// Determine if alert should be sent\nconst sendAlert = overallStatus === \"CRITICAL\" || overallStatus === \"WARNING\";\n\n// Build detailed analysis\nconst analysis = {\n  alert_level: overallStatus,\n  alert_title: overallStatus === \"CRITICAL\" \n    ? \"🚨 CRITICAL SYSTEM HEALTH ISSUE\" \n    : overallStatus === \"WARNING\"\n    ? \"⚠️ SYSTEM HEALTH WARNING\"\n    : \"✅ SYSTEM HEALTHY\",\n  alert_message: allIssues.length > 0 \n    ? allIssues.join('\\n• ')\n    : \"All systems operating normally\",\n  send_alert: sendAlert,\n  \n  // Detailed metrics\n  metrics: {\n    last_execution: {\n      timestamp: latestLog.Timestamp,\n      minutes_ago: Math.round(minutesSinceLastExecution),\n      health_score: currentHealthScore,\n      status: latestLog.Health_Status\n    },\n    health_scores: {\n      current: currentHealthScore,\n      avg_last_hour: Math.round(avgHealthLastHour),\n      avg_last_24h: Math.round(avgHealthLast24h),\n      trend: avgHealthLastHour < avgHealthLast24h - 15 ? \"DECLINING\" : \"STABLE\"\n    },\n    data_sources: {\n      usgs_failures_2h: usgsFailures,\n      noaa_failures_2h: noaaFailures,\n      both_failed: bothPrimaryFailed,\n      failover_active: failoverActive > 0\n    },\n    performance: {\n      avg_execution_time: Math.round(avgExecutionTime),\n      max_execution_time: Math.round(maxExecutionTime)\n    },\n    errors: {\n      error_rate_percent: Math.round(errorRate),\n      consecutive_errors: consecutiveErrors,\n      total_errors_2h: logsWithErrors.length\n    }\n  },\n  \n  // Summary stats\n  summary: {\n    total_executions_24h: logsLast24Hours.length,\n    total_executions_2h: logsLastTwoHours.length,\n    expected_executions_24h: 96, // Every 15 min = 96/day\n    execution_coverage: Math.round((logsLast24Hours.length / 96) * 100)\n  },\n  \n  issues: allIssues,\n  system_status: overallStatus\n};\n\n// ========================================\n// ALERT ESCALATION LOGIC\n// ========================================\n\nlet escalationLevel = \"NONE\";\nlet escalationActions = [];\n\n// Determine escalation level based on severity\nif (overallStatus === \"CRITICAL\") {\n  const criticalIssues = allIssues.filter(issue => \n    issue.includes(\"CRITICAL\") || \n    issue.includes(\"down\") ||\n    issue.includes(\"hasn't run\")\n  ).length;\n  \n  if (criticalIssues >= 3 || bothPrimaryFailed > 0) {\n    escalationLevel = \"EMERGENCY\";\n    escalationActions.push(\"Send to emergency contact\");\n    escalationActions.push(\"Attempt automatic restart\");\n    escalationActions.push(\"SMS alert\");\n  } else {\n    escalationLevel = \"CRITICAL\";\n    escalationActions.push(\"Send to admin email\");\n    escalationActions.push(\"Log to escalation sheet\");\n  }\n} else if (overallStatus === \"WARNING\") {\n  escalationLevel = \"WARNING\";\n  escalationActions.push(\"Send warning email\");\n  escalationActions.push(\"Monitor closely\");\n}\n\n// Add escalation info to analysis\nanalysis.escalation = {\n  level: escalationLevel,\n  actions: escalationActions,\n  requires_immediate_action: escalationLevel === \"EMERGENCY\",\n  auto_escalate_after_hours: escalationLevel === \"CRITICAL\" ? 2 : null\n};\n\nreturn [{\n  json: analysis\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "ff7f1cff-8ff9-4429-b359-55ba20ccbe22",
+      "name": "Analyze System Health"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bf32cc1c-5a99-4415-a753-7872d883eb89",
+              "leftValue": "={{ $json.deduplication.should_send }}",
+              "rightValue": "TRUE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "5892bea3-2d79-4406-8be4-7823afe5ec31",
+      "name": "Should Send Alert?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "praptisanghavi@gmail.com",
+        "toEmail": "{{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2912,
+        -96
+      ],
+      "id": "28e23c40-9a87-4be2-a1ad-38128446c7cf",
+      "name": "Send Admin Alert",
+      "webhookId": "2ebc8975-e5b9-44ca-a026-06e98b5d04b3",
+      "retryOnFail": true,
+      "credentials": {
+        "smtp": {
+          "id": "evvnJSziPeFNhlCc",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        96
+      ],
+      "id": "75189c45-c47e-47ba-b788-351a13cd3702",
+      "name": "System Healthy - No Alert"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format alert data for escalation logging\nconst alert = $input.item.json;\n\nreturn {\n  json: {\n    Timestamp: new Date().toISOString(),\n    Alert_Level: alert.alert_level,\n    Alert_Source: \"Health Monitor\",\n    Alert_Title: alert.alert_title,\n    Issue_Count: alert.issues.length,\n    Escalated: alert.escalation?.level !== \"NONE\",\n    Escalation_Level: alert.escalation?.level || \"NONE\",\n    Notification_Sent: true,\n    Resolution_Time: \"\",\n    Status: \"OPEN\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        -96
+      ],
+      "id": "2db017f1-abed-41df-b01e-1739e01629cf",
+      "name": "Format Escalation Log"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 634452542,
+          "mode": "list",
+          "cachedResultName": "Alert Escalation Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=634452542"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Level",
+              "displayName": "Alert_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Level",
+              "displayName": "Alert_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Title",
+              "displayName": "Alert_Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Issue_Count",
+              "displayName": "Issue_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Escalated",
+              "displayName": "Escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Escalation_Level",
+              "displayName": "Escalation_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notification_Sent",
+              "displayName": "Notification_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resolution_Time",
+              "displayName": "Resolution_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2240,
+        -96
+      ],
+      "id": "923e7b34-7e57-495e-9ca2-46189a736d14",
+      "name": "Log Alert Escalation",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// PRODUCTION ALERT CLASSIFICATION ENGINE\n// Determines severity, impact, and escalation level\n// ========================================\n\nconst analysis = $input.item.json;\n\n// Generate unique alert ID\nconst alertId = `ALERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;\n\n// ========================================\n// 1. SEVERITY CLASSIFICATION\n// ========================================\n\nlet severity = \"INFO\";\nconst healthScore = analysis.metrics.health_scores.current;\nconst issueCount = analysis.issues.length;\nconst minutesSinceLastExec = analysis.metrics.last_execution.minutes_ago;\n\nif (analysis.alert_level === \"CRITICAL\") {\n  if (healthScore < 20 || issueCount >= 5 || minutesSinceLastExec > 180) {\n    severity = \"EMERGENCY\";\n  } else {\n    severity = \"CRITICAL\";\n  }\n} else if (analysis.alert_level === \"WARNING\") {\n  severity = \"WARNING\";\n} else {\n  severity = \"INFO\";\n}\n\n// ========================================\n// 2. IMPACT ASSESSMENT\n// ========================================\n\nlet impact = \"LOW\";\nlet impactScore = 0;\n\n// Check data source failures\nif (analysis.metrics.data_sources.both_failed > 0) {\n  impactScore += 40; // Both primary sources down = critical\n}\nif (analysis.metrics.data_sources.usgs_failures_2h >= 4) {\n  impactScore += 20;\n}\nif (analysis.metrics.data_sources.noaa_failures_2h >= 4) {\n  impactScore += 10;\n}\n\n// Check execution coverage\nif (analysis.summary.execution_coverage < 50) {\n  impactScore += 30; // Missing over half executions\n}\n\n// Check error rate\nif (analysis.metrics.errors.error_rate_percent > 50) {\n  impactScore += 20;\n}\n\n// Check consecutive errors\nif (analysis.metrics.errors.consecutive_errors >= 5) {\n  impactScore += 15;\n}\n\n// Determine impact level\nif (impactScore >= 70) {\n  impact = \"CRITICAL\";\n} else if (impactScore >= 40) {\n  impact = \"HIGH\";\n} else if (impactScore >= 20) {\n  impact = \"MEDIUM\";\n}\n\n// ========================================\n// 3. CATEGORY CLASSIFICATION\n// ========================================\n\nlet categories = [];\n\nif (minutesSinceLastExec > 120) {\n  categories.push(\"SYSTEM_DOWN\");\n}\nif (analysis.metrics.data_sources.usgs_failures_2h > 0 || analysis.metrics.data_sources.noaa_failures_2h > 0) {\n  categories.push(\"DATA_SOURCE\");\n}\nif (analysis.metrics.performance.avg_execution_time > 90) {\n  categories.push(\"PERFORMANCE\");\n}\nif (analysis.metrics.errors.error_rate_percent > 25) {\n  categories.push(\"ERROR_RATE\");\n}\nif (healthScore < 60) {\n  categories.push(\"HEALTH_DEGRADED\");\n}\n\n// ========================================\n// 4. DETERMINE ESCALATION LEVEL\n// ========================================\n\nlet escalationLevel = 0;\nlet responseTimeMinutes = 0;\nlet contactGroup = \"NONE\";\nlet channels = [\"LOG_ONLY\"];\nlet autoEscalateAfter = 0;\n\n// Map severity + health score to escalation level\nif (severity === \"EMERGENCY\") {\n  escalationLevel = 4;\n  responseTimeMinutes = 5;\n  contactGroup = \"ALL_CONTACTS\";\n  channels = [\"EMAIL\", \"SMS\", \"SLACK\", \"PAGERDUTY\"];\n  autoEscalateAfter = 10;\n} else if (severity === \"CRITICAL\" && healthScore < 40) {\n  escalationLevel = 3;\n  responseTimeMinutes = 15;\n  contactGroup = \"PRIMARY_ADMIN,SECONDARY_ADMIN,ONCALL_ENG\";\n  channels = [\"EMAIL\", \"SMS\", \"SLACK\"];\n  autoEscalateAfter = 15;\n} else if (severity === \"CRITICAL\") {\n  escalationLevel = 2;\n  responseTimeMinutes = 30;\n  contactGroup = \"PRIMARY_ADMIN,SECONDARY_ADMIN\";\n  channels = [\"EMAIL\", \"SMS\"];\n  autoEscalateAfter = 30;\n} else if (severity === \"WARNING\") {\n  escalationLevel = 1;\n  responseTimeMinutes = 120;\n  contactGroup = \"PRIMARY_ADMIN\";\n  channels = [\"EMAIL\"];\n  autoEscalateAfter = 60;\n}\n\n// Special case: Dead Man's Switch\nif (categories.includes(\"SYSTEM_DOWN\") && minutesSinceLastExec > 120) {\n  escalationLevel = Math.max(escalationLevel, 3);\n  contactGroup = \"PRIMARY_ADMIN,ONCALL_ENG\";\n  channels = [\"EMAIL\", \"SMS\"];\n  autoEscalateAfter = 20;\n}\n\n// ========================================\n// 5. ALERT FINGERPRINT (for de-duplication)\n// ========================================\n\n// Create fingerprint based on issue types\nconst issueFingerprint = categories.sort().join(\"|\");\nconst alertFingerprint = `${severity}:${issueFingerprint}:${Math.floor(healthScore / 10) * 10}`;\n\n// ========================================\n// 6. BUILD CLASSIFIED ALERT OBJECT\n// ========================================\n\nconst classifiedAlert = {\n  // Alert identification\n  alert_id: alertId,\n  alert_timestamp: new Date().toISOString(),\n  alert_fingerprint: alertFingerprint,\n  \n  // Classification\n  severity: severity,\n  impact: impact,\n  impact_score: impactScore,\n  categories: categories,\n  \n  // Escalation\n  escalation_level: escalationLevel,\n  response_time_minutes: responseTimeMinutes,\n  contact_group: contactGroup,\n  channels: channels,\n  auto_escalate_after_minutes: autoEscalateAfter,\n  \n  // Original analysis data\n  original_analysis: analysis,\n  \n  // Routing metadata\n  requires_immediate_attention: escalationLevel >= 3,\n  business_hours: isBusinessHours(),\n  day_of_week: new Date().toLocaleDateString('en-US', { weekday: 'long' }),\n  \n  // For tracking\n  delivery_status: {},\n  acknowledged: false,\n  acknowledged_by: null,\n  acknowledged_at: null,\n  escalated: false,\n  escalation_count: 0,\n  status: \"PENDING_DELIVERY\"\n};\n\n// ========================================\n// HELPER: Check if business hours\n// ========================================\nfunction isBusinessHours() {\n  const now = new Date();\n  const hour = now.getHours();\n  const day = now.getDay(); // 0=Sunday, 6=Saturday\n  \n  // Business hours: Mon-Fri, 8am-6pm\n  return day >= 1 && day <= 5 && hour >= 8 && hour < 18;\n}\n\nreturn {\n  json: classifiedAlert\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "b911f505-ec4a-4347-8360-7bc51268fc67",
+      "name": "Classify Alert & Determine Escalation"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 465268830,
+          "mode": "list",
+          "cachedResultName": "Alert Acknowledgment Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=465268830"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Alert_ID",
+              "displayName": "Alert_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Timestamp",
+              "displayName": "Alert_Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Level",
+              "displayName": "Alert_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Title",
+              "displayName": "Alert_Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sent_To",
+              "displayName": "Sent_To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delivery_Status",
+              "displayName": "Delivery_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Acknowledged",
+              "displayName": "Acknowledged",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Acknowledged_By",
+              "displayName": "Acknowledged_By",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Acknowledged_At",
+              "displayName": "Acknowledged_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resolution_Time",
+              "displayName": "Resolution_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Auto_Escalated",
+              "displayName": "Auto_Escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "id": "ffee4736-f06a-4698-ad86-fa6765ffc6c5",
+      "name": "Check Recent Alerts",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// DE-DUPLICATION & SUPPRESSION ENGINE\n// Prevents alert spam and respects suppression rules\n// ========================================\n\n// Get classified alert\nconst classifiedAlert = $('Classify Alert & Determine Escalation').first().json;\n\n// Get recent alerts\nlet recentAlerts = [];\ntry {\n  const alertLog = $input.all();\n  recentAlerts = alertLog.map(item => item.json).filter(alert => alert.Alert_ID);\n} catch (e) {\n  console.log(\"No recent alerts found or error reading:\", e);\n}\n\n// ========================================\n// 1. CHECK FOR DUPLICATE IN LAST 60 MINUTES\n// ========================================\n\nconst now = new Date();\nconst sixtyMinutesAgo = new Date(now - 60 * 60 * 1000);\n\nconst duplicateAlerts = recentAlerts.filter(alert => {\n  const alertTime = new Date(alert.Alert_Timestamp || alert.Timestamp);\n  \n  // Check if within 60 minutes\n  if (alertTime < sixtyMinutesAgo) return false;\n  \n  // Check if same fingerprint (would need to add fingerprint to log)\n  // For now, check if same severity and similar title\n  const sameSeverity = alert.Alert_Level === classifiedAlert.severity;\n  const recentEnough = true; // Within 60 min\n  \n  return sameSeverity && recentEnough;\n});\n\nconst isDuplicate = duplicateAlerts.length > 0;\n\n// ========================================\n// 2. CHECK IF ALREADY ACKNOWLEDGED\n// ========================================\n\nconst acknowledgedAlerts = recentAlerts.filter(alert => {\n  return alert.Acknowledged === \"TRUE\" || alert.Acknowledged === true;\n});\n\n// If similar alert already acknowledged and not resolved\nconst hasAcknowledgedSimilar = acknowledgedAlerts.some(alert => {\n  const alertTime = new Date(alert.Alert_Timestamp);\n  const isRecent = alertTime > new Date(now - 2 * 60 * 60 * 1000); // 2 hours\n  const isSameSeverity = alert.Alert_Level === classifiedAlert.severity;\n  const notResolved = !alert.Resolution_Time || alert.Resolution_Time === \"\";\n  \n  return isRecent && isSameSeverity && notResolved;\n});\n\n// ========================================\n// 3. CHECK SUPPRESSION RULES\n// (Would need to read Suppression sheet - simplified for now)\n// ========================================\n\nlet isSuppressed = false;\nlet suppressionReason = null;\n\n// TODO: Read from Alert Suppression sheet\n// For now, implement basic rate limiting\n\n// Count alerts in last 15 minutes\nconst fifteenMinutesAgo = new Date(now - 15 * 60 * 1000);\nconst recentAlertCount = recentAlerts.filter(alert => {\n  const alertTime = new Date(alert.Alert_Timestamp || alert.Timestamp);\n  return alertTime > fifteenMinutesAgo;\n}).length;\n\n// Rate limit: max 5 alerts per 15 minutes\nif (recentAlertCount >= 5) {\n  isSuppressed = true;\n  suppressionReason = \"RATE_LIMIT_EXCEEDED\";\n}\n\n// ========================================\n// 4. CHECK MAINTENANCE WINDOW\n// (Simplified - would read from Maintenance Windows sheet)\n// ========================================\n\nconst isMaintenanceWindow = false; // TODO: Implement maintenance check\n\n// ========================================\n// 5. DETERMINE IF ALERT SHOULD BE SENT\n// ========================================\n\nlet shouldSend = true;\nlet suppressionDetails = [];\n\nif (isDuplicate) {\n  shouldSend = false;\n  suppressionDetails.push(`Duplicate alert detected (${duplicateAlerts.length} similar in last 60 min)`);\n}\n\nif (hasAcknowledgedSimilar && classifiedAlert.escalation_level < 3) {\n  // Don't suppress EMERGENCY/high CRITICAL if acknowledged but not resolved\n  shouldSend = false;\n  suppressionDetails.push(\"Similar alert already acknowledged\");\n}\n\nif (isSuppressed) {\n  shouldSend = false;\n  suppressionDetails.push(`Suppressed: ${suppressionReason}`);\n}\n\nif (isMaintenanceWindow) {\n  shouldSend = false;\n  suppressionDetails.push(\"In maintenance window\");\n}\n\n// Override: Always send EMERGENCY level (level 4)\nif (classifiedAlert.escalation_level === 4) {\n  shouldSend = true;\n  suppressionDetails = [\"EMERGENCY: Bypassing suppression\"];\n}\n\n// ========================================\n// 6. BUILD RESULT\n// ========================================\n\nconst deduplicationResult = {\n  ...classifiedAlert, // Pass through all classified data\n  \n  // De-duplication results\n  deduplication: {\n    checked: true,\n    is_duplicate: isDuplicate,\n    duplicate_count: duplicateAlerts.length,\n    has_acknowledged_similar: hasAcknowledgedSimilar,\n    is_suppressed: isSuppressed,\n    suppression_reason: suppressionReason,\n    in_maintenance: isMaintenanceWindow,\n    should_send: shouldSend,\n    suppression_details: suppressionDetails,\n    recent_alert_count_15min: recentAlertCount\n  },\n  \n  // Update status\n  status: shouldSend ? \"PENDING_DELIVERY\" : \"SUPPRESSED\"\n};\n\nreturn {\n  json: deduplicationResult\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "3854b45e-d792-4ac7-826d-5f41d6b3712b",
+      "name": "De-duplicate & Suppress Check"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 101199719,
+          "mode": "list",
+          "cachedResultName": "Escalation Contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=101199719"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        -96
+      ],
+      "id": "48e3c620-a399-4acb-ba83-f954879d61d0",
+      "name": "Get Escalation Contacts",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// ESCALATION ROUTING ENGINE\n// Determines who to contact based on rules\n// ========================================\n\n// Get classified alert with de-duplication results\nconst alert = $('De-duplicate & Suppress Check').first().json;\n\n// Get all contacts\nconst allContacts = $input.all().map(item => item.json);\n\n// ========================================\n// 1. PARSE CONTACT GROUP\n// ========================================\n\nlet contactIds = [];\n\nif (alert.contact_group === \"ALL_CONTACTS\") {\n  // Get all active contacts\n  contactIds = allContacts\n    .filter(c => c.Active === \"TRUE\" || c.Active === true)\n    .map(c => c.Contact_ID);\n} else if (alert.contact_group === \"NONE\") {\n  contactIds = [];\n} else {\n  // Parse comma-separated list\n  contactIds = alert.contact_group.split(',').map(id => id.trim());\n}\n\n// ========================================\n// 2. APPLY TIME-BASED ROUTING\n// ========================================\n\nconst now = new Date();\nconst hour = now.getHours();\nconst day = now.getDay(); // 0=Sunday, 6=Saturday\nconst isWeekend = day === 0 || day === 6;\nconst isBusinessHours = day >= 1 && day <= 5 && hour >= 8 && hour < 18;\nconst isAfterHours = !isBusinessHours;\n\n// Filter contacts based on schedule\nconst selectedContacts = allContacts.filter(contact => {\n  // Must be in contact group\n  if (!contactIds.includes(contact.Contact_ID)) return false;\n  \n  // Must be active\n  if (contact.Active !== \"TRUE\" && contact.Active !== true) return false;\n  \n  // Check schedule\n  const schedule = contact.On_Call_Schedule || \"\";\n  \n  if (schedule === \"24/7\") return true;\n  if (schedule === \"Business-Hours\" && isBusinessHours) return true;\n  if (schedule === \"After-Hours\" && isAfterHours) return true;\n  if (schedule === \"Weekends\" && isWeekend) return true;\n  if (schedule === \"Emergency-Only\" && alert.escalation_level >= 4) return true;\n  \n  // If no schedule specified, include for level 2+\n  if (!schedule && alert.escalation_level >= 2) return true;\n  \n  return false;\n});\n\n// ========================================\n// 3. ENSURE MINIMUM COVERAGE\n// ========================================\n\n// If no contacts selected and escalation level > 0, get primary admin\nif (selectedContacts.length === 0 && alert.escalation_level > 0) {\n  const primaryAdmin = allContacts.find(c => c.Contact_ID === \"PRIMARY_ADMIN\");\n  if (primaryAdmin) {\n    selectedContacts.push(primaryAdmin);\n  }\n}\n\n// ========================================\n// 4. BUILD CONTACT LIST WITH CHANNELS\n// ========================================\n\nconst contactList = selectedContacts.map(contact => {\n  // Determine which channels to use for this contact\n  const channels = [];\n  \n  // Always include email if available\n  if (contact.Email) {\n    channels.push({\n      type: \"EMAIL\",\n      address: contact.Email,\n      enabled: true\n    });\n  }\n  \n  // Include SMS if enabled and requested\n  if ((contact.SMS_Enabled === \"TRUE\" || contact.SMS_Enabled === true) && \n      contact.Phone && \n      alert.channels.includes(\"SMS\")) {\n    channels.push({\n      type: \"SMS\",\n      address: contact.Phone,\n      enabled: true\n    });\n  }\n  \n  // Include Slack if configured and requested\n  if (contact.Slack_Webhook && alert.channels.includes(\"SLACK\")) {\n    channels.push({\n      type: \"SLACK\",\n      address: contact.Slack_Webhook,\n      enabled: true\n    });\n  }\n  \n  return {\n    contact_id: contact.Contact_ID,\n    name: contact.Name,\n    role: contact.Role,\n    priority: contact.Priority,\n    channels: channels,\n    backup_contact: contact.Backup_Contact\n  };\n});\n\n// Sort by priority\ncontactList.sort((a, b) => (a.priority || 99) - (b.priority || 99));\n\n// ========================================\n// 5. BUILD DELIVERY PLAN\n// ========================================\n\nconst deliveryPlan = {\n  alert_id: alert.alert_id,\n  escalation_level: alert.escalation_level,\n  routing_timestamp: new Date().toISOString(),\n  time_context: {\n    is_business_hours: isBusinessHours,\n    is_after_hours: isAfterHours,\n    is_weekend: isWeekend,\n    hour: hour,\n    day_of_week: now.toLocaleDateString('en-US', { weekday: 'long' })\n  },\n  contacts: contactList,\n  total_contacts: contactList.length,\n  channels_to_use: alert.channels,\n  delivery_status: \"PENDING\"\n};\n\n// ========================================\n// 6. RETURN COMPLETE ALERT WITH ROUTING\n// ========================================\n\nreturn {\n  json: {\n    ...alert, // All alert data\n    routing: deliveryPlan\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        -96
+      ],
+      "id": "b8adb204-6e2c-4e59-9112-33144a32717d",
+      "name": "Route to Appropriate Contacts"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "routing.contacts",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        -96
+      ],
+      "id": "4d9c4d68-5701-440c-b2ff-1b45d68a5321",
+      "name": "Split by Contact"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// EMAIL NOTIFICATION BUILDER\n// Creates personalized email for each contact\n// ========================================\n\nconst alert = $input.item.json;\nconst contact = alert.routing.contacts[0]; // Split Out gives us one contact per item\n\n// Check if this contact has email channel\nconst emailChannel = contact.channels.find(ch => ch.type === \"EMAIL\");\n\nif (!emailChannel) {\n  // Skip this contact - no email configured\n  return [];\n}\n\n// ========================================\n// BUILD EMAIL CONTENT\n// ========================================\n\nconst analysis = alert.original_analysis;\n\n// Build personalized greeting\nconst greeting = `Dear ${contact.name},`;\n\n// Build severity styling\nlet severityColor = \"#4CAF50\";\nlet severityBg = \"#e8f5e9\";\nif (alert.severity === \"EMERGENCY\") {\n  severityColor = \"#d32f2f\";\n  severityBg = \"#ffebee\";\n} else if (alert.severity === \"CRITICAL\") {\n  severityColor = \"#ff5722\";\n  severityBg = \"#fce4ec\";\n} else if (alert.severity === \"WARNING\") {\n  severityColor = \"#ff9800\";\n  severityBg = \"#fff3e0\";\n}\n\n// Build issue list\nconst issuesList = analysis.issues.map(issue => `<li>${issue}</li>`).join('');\n\n// Build category badges\nconst categoryBadges = alert.categories.map(cat => \n  `<span style=\"background: #2196F3; color: white; padding: 5px 10px; border-radius: 3px; margin: 5px; display: inline-block;\">${cat}</span>`\n).join('');\n\n// Build contact acknowledgment link (simplified - would be unique URL in production)\nconst ackLink = `mailto:flood-monitor-ack@yourdomain.com?subject=ACK-${alert.alert_id}&body=I%20acknowledge%20this%20alert`;\n\n// Build HTML email\nconst htmlBody = `\n<html>\n<head>\n<style>\n  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n  .container { max-width: 800px; margin: 0 auto; }\n  .header { background: ${severityBg}; border-left: 5px solid ${severityColor}; padding: 20px; margin: 20px 0; }\n  .severity { color: ${severityColor}; font-size: 24px; font-weight: bold; }\n  table { width: 100%; border-collapse: collapse; margin: 15px 0; }\n  th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }\n  th { background-color: #f5f5f5; font-weight: bold; }\n  .metric-good { color: #4CAF50; }\n  .metric-warning { color: #ff9800; }\n  .metric-critical { color: #d32f2f; }\n  .action-button { background: ${severityColor}; color: white; padding: 12px 25px; text-decoration: none; \n                   border-radius: 5px; display: inline-block; margin: 10px 5px; }\n  .footer { background: #f5f5f5; padding: 20px; margin-top: 30px; font-size: 12px; color: #666; }\n</style>\n</head>\n<body>\n\n<div class=\"container\">\n\n<div class=\"header\">\n  <div class=\"severity\">🚨 ${alert.severity} ALERT</div>\n  <p><strong>Houston Flood Monitoring System</strong></p>\n  <p><strong>Alert ID:</strong> ${alert.alert_id}</p>\n  <p><strong>Timestamp:</strong> ${alert.alert_timestamp}</p>\n</div>\n\n${greeting}\n\n<p>You are receiving this ${alert.severity} level alert as part of the escalation chain (Level ${alert.escalation_level}).</p>\n\n<h2>📊 Alert Summary</h2>\n<table>\n  <tr>\n    <th>Property</th>\n    <th>Value</th>\n  </tr>\n  <tr>\n    <td><strong>Severity</strong></td>\n    <td class=\"severity\">${alert.severity}</td>\n  </tr>\n  <tr>\n    <td><strong>Impact</strong></td>\n    <td>${alert.impact} (Score: ${alert.impact_score})</td>\n  </tr>\n  <tr>\n    <td><strong>Escalation Level</strong></td>\n    <td>Level ${alert.escalation_level}</td>\n  </tr>\n  <tr>\n    <td><strong>Required Response Time</strong></td>\n    <td>${alert.response_time_minutes} minutes</td>\n  </tr>\n  <tr>\n    <td><strong>Categories</strong></td>\n    <td>${categoryBadges}</td>\n  </tr>\n</table>\n\n<h2>🚨 Issues Detected</h2>\n<ul>\n${issuesList}\n</ul>\n\n<h2>📈 System Metrics</h2>\n\n<h3>Health Status:</h3>\n<table>\n  <tr>\n    <td><strong>Current Health Score</strong></td>\n    <td class=\"${analysis.metrics.health_scores.current < 60 ? 'metric-critical' : analysis.metrics.health_scores.current < 80 ? 'metric-warning' : 'metric-good'}\">\n      ${analysis.metrics.health_scores.current}/100\n    </td>\n  </tr>\n  <tr>\n    <td><strong>Last Hour Average</strong></td>\n    <td>${analysis.metrics.health_scores.avg_last_hour}/100</td>\n  </tr>\n  <tr>\n    <td><strong>24-Hour Average</strong></td>\n    <td>${analysis.metrics.health_scores.avg_last_24h}/100</td>\n  </tr>\n  <tr>\n    <td><strong>Trend</strong></td>\n    <td>${analysis.metrics.health_scores.trend}</td>\n  </tr>\n</table>\n\n<h3>Last Execution:</h3>\n<table>\n  <tr>\n    <td><strong>Time</strong></td>\n    <td>${analysis.metrics.last_execution.timestamp}</td>\n  </tr>\n  <tr>\n    <td><strong>Minutes Ago</strong></td>\n    <td class=\"${analysis.metrics.last_execution.minutes_ago > 60 ? 'metric-critical' : 'metric-good'}\">\n      ${analysis.metrics.last_execution.minutes_ago} minutes\n    </td>\n  </tr>\n  <tr>\n    <td><strong>Health Score</strong></td>\n    <td>${analysis.metrics.last_execution.health_score}/100</td>\n  </tr>\n</table>\n\n<h3>Data Sources:</h3>\n<table>\n  <tr>\n    <td><strong>USGS Failures (2h)</strong></td>\n    <td class=\"${analysis.metrics.data_sources.usgs_failures_2h > 0 ? 'metric-warning' : 'metric-good'}\">\n      ${analysis.metrics.data_sources.usgs_failures_2h}\n    </td>\n  </tr>\n  <tr>\n    <td><strong>NOAA Failures (2h)</strong></td>\n    <td class=\"${analysis.metrics.data_sources.noaa_failures_2h > 0 ? 'metric-warning' : 'metric-good'}\">\n      ${analysis.metrics.data_sources.noaa_failures_2h}\n    </td>\n  </tr>\n  <tr>\n    <td><strong>Both Sources Failed</strong></td>\n    <td class=\"${analysis.metrics.data_sources.both_failed > 0 ? 'metric-critical' : 'metric-good'}\">\n      ${analysis.metrics.data_sources.both_failed}\n    </td>\n  </tr>\n</table>\n\n<h2>⚡ Required Actions</h2>\n<p><strong>Response Required Within: ${alert.response_time_minutes} minutes</strong></p>\n\n<div style=\"text-align: center; margin: 30px 0;\">\n  <a href=\"${ackLink}\" class=\"action-button\">✅ ACKNOWLEDGE ALERT</a>\n  <a href=\"[YOUR_GOOGLE_SHEET_URL]\" class=\"action-button\">📊 VIEW DASHBOARD</a>\n</div>\n\n${alert.escalation_level >= 3 ? `\n<div style=\"background: #ffebee; border: 2px solid #d32f2f; padding: 20px; margin: 20px 0;\">\n  <h3 style=\"color: #d32f2f; margin-top: 0;\">⚠️ HIGH PRIORITY ESCALATION</h3>\n  <p><strong>This alert requires immediate attention!</strong></p>\n  <p>If not acknowledged within ${alert.auto_escalate_after_minutes} minutes, it will automatically escalate to the next level.</p>\n  ${contact.backup_contact ? `<p>Backup contact: ${contact.backup_contact}</p>` : ''}\n</div>\n` : ''}\n\n<h2>📋 Next Steps</h2>\n<ol>\n  <li><strong>Acknowledge this alert</strong> by clicking the button above or replying to this email</li>\n  <li><strong>Investigate the issue</strong> using the dashboard link</li>\n  <li><strong>Take corrective action</strong> based on the severity</li>\n  <li><strong>Update the team</strong> on status and resolution</li>\n  ${alert.escalation_level >= 3 ? '<li><strong>Contact on-call engineer</strong> if additional support needed</li>' : ''}\n</ol>\n\n<div class=\"footer\">\n  <p><strong>Houston Flood Monitoring System - Alert Escalation</strong></p>\n  <p>Alert ID: ${alert.alert_id}</p>\n  <p>Your Role: ${contact.role}</p>\n  <p>Escalation Level: ${alert.escalation_level} of 4</p>\n  <p>Time: ${alert.routing.time_context.day_of_week}, ${alert.routing.time_context.is_business_hours ? 'Business Hours' : 'After Hours'}</p>\n  <hr>\n  <p>This is an automated alert. Do not reply directly to this email unless acknowledging.</p>\n  <p>For support, contact: admin@yourdomain.com</p>\n</div>\n\n</div>\n\n</body>\n</html>\n`;\n\n// ========================================\n// RETURN EMAIL DATA\n// ========================================\n\nreturn {\n  json: {\n    // Email details\n    to: emailChannel.address,\n    subject: `[${alert.severity}] Level ${alert.escalation_level} Alert - ${alert.alert_id}`,\n    html_body: htmlBody,\n    \n    // Tracking\n    alert_id: alert.alert_id,\n    contact_id: contact.contact_id,\n    contact_name: contact.name,\n    channel_type: \"EMAIL\",\n    \n    // Pass through alert data\n    alert: alert\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        -96
+      ],
+      "id": "1c49fb0b-0966-418d-8d23-9716a8226b50",
+      "name": "Prepare Email Notification"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format delivery record for logging\nconst emailData = $('Prepare Email Notification').first().json;\nconst alert = emailData.alert;\n\nreturn {\n  json: {\n    Alert_ID: alert.alert_id,\n    Alert_Timestamp: alert.alert_timestamp,\n    Alert_Level: alert.severity,\n    Alert_Title: `${alert.severity} - Level ${alert.escalation_level}`,\n    Sent_To: `${emailData.contact_name} (${emailData.to})`,\n    Delivery_Status: \"SENT\",\n    Acknowledged: \"FALSE\",\n    Acknowledged_By: \"\",\n    Acknowledged_At: \"\",\n    Resolution_Time: \"\",\n    Auto_Escalated: \"FALSE\",\n    Status: \"PENDING_ACK\",\n    Notes: \"\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3136,
+        -96
+      ],
+      "id": "1c741a9d-606f-4a0e-8631-e449f8358290",
+      "name": "Format Delivery Log"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 465268830,
+          "mode": "list",
+          "cachedResultName": "Alert Acknowledgment Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=465268830"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Alert_ID",
+              "displayName": "Alert_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Timestamp",
+              "displayName": "Alert_Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Level",
+              "displayName": "Alert_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert_Title",
+              "displayName": "Alert_Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sent_To",
+              "displayName": "Sent_To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delivery_Status",
+              "displayName": "Delivery_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Acknowledged",
+              "displayName": "Acknowledged",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Acknowledged_By",
+              "displayName": "Acknowledged_By",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Acknowledged_At",
+              "displayName": "Acknowledged_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resolution_Time",
+              "displayName": "Resolution_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Auto_Escalated",
+              "displayName": "Auto_Escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3360,
+        -96
+      ],
+      "id": "4540b73b-be77-413e-9de1-479a2710eefd",
+      "name": "Log to Acknowledgment Tracking",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3584,
+        -96
+      ],
+      "id": "9f469da0-9907-4699-abf9-4471ae08d360",
+      "name": "Alert Delivery Complete"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every 1 Hour": {
+      "main": [
+        [
+          {
+            "node": "Get Recent Health Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recent Health Logs": {
+      "main": [
+        [
+          {
+            "node": "Analyze System Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze System Health": {
+      "main": [
+        [
+          {
+            "node": "Classify Alert & Determine Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Alert?": {
+      "main": [
+        [
+          {
+            "node": "Get Escalation Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "System Healthy - No Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Escalation Log": {
+      "main": [
+        [
+          {
+            "node": "Log Alert Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Alert Escalation": {
+      "main": [
+        [
+          {
+            "node": "Split by Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Alert & Determine Escalation": {
+      "main": [
+        [
+          {
+            "node": "Check Recent Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Recent Alerts": {
+      "main": [
+        [
+          {
+            "node": "De-duplicate & Suppress Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "De-duplicate & Suppress Check": {
+      "main": [
+        [
+          {
+            "node": "Should Send Alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Escalation Contacts": {
+      "main": [
+        [
+          {
+            "node": "Route to Appropriate Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route to Appropriate Contacts": {
+      "main": [
+        [
+          {
+            "node": "Format Escalation Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split by Contact": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Admin Alert": {
+      "main": [
+        [
+          {
+            "node": "Format Delivery Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Delivery Log": {
+      "main": [
+        [
+          {
+            "node": "Log to Acknowledgment Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Acknowledgment Tracking": {
+      "main": [
+        [
+          {
+            "node": "Alert Delivery Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5ed57d26-ede2-440f-8681-4d24b818b8ef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "913a6a08d462734359eef49d07dc0310364f5c77dc31186a23e7594057f23cba"
+  },
+  "id": "AkVorjnjBMQ9O9l5",
+  "tags": []
+}

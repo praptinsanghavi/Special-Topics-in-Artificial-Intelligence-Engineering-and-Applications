@@ -1,0 +1,1757 @@
+{
+  "name": "Flash Flood Evacuation System",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "=models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        424,
+        64
+      ],
+      "id": "db1d4657-a31c-48f9-acdb-0fbf0ebb520e",
+      "name": "Google Gemini Chat Model",
+      "notesInFlow": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "q5YWh1zBKduZs38g",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the FLOOD PREDICTOR AGENT in a flood emergency response system.\n\nINPUT DATA:\nYou receive gauge readings with current water levels, flood stages, and rise rates.\n\nYOUR ROLE:\n1. Forecast water levels for the next 6, 12, and 24 hours\n2. Calculate time until each gauge reaches critical thresholds\n3. Identify which gauges will overflow first\n4. Provide actionable time windows for emergency response\n\nFORECASTING RULES:\n- Use current rise_rate_ft_per_hour to project future water levels\n- Assume rise rate remains constant (simple linear projection)\n- Calculate time to flood stage: (flood_stage - current_level) / rise_rate\n- Flag negative times (already flooded)\n- Consider elevation of nearby roads\n\nANALYZE THIS GAUGE DATA:\n{{ JSON.stringify($('Transform USGS Data').item.json.gauges) }}\n\nOUTPUT (JSON only, no other text):\n{\n  \"forecast_timestamp\": \"<current ISO timestamp>\",\n  \"predictions\": [\n    {\n      \"gauge_id\": \"<gauge_id>\",\n      \"gauge_name\": \"<gauge_name>\",\n      \"current_water_level_ft\": <number>,\n      \"flood_stage_ft\": <number>,\n      \"forecasted_levels\": {\n        \"in_6_hours\": <number>,\n        \"in_12_hours\": <number>,\n        \"in_24_hours\": <number>\n      },\n      \"time_to_flood_stage_hours\": <number or \"ALREADY_FLOODED\">,\n      \"time_to_critical_level_hours\": <number>,\n      \"will_flood\": <true/false>,\n      \"severity\": \"EXTREME|HIGH|MODERATE|LOW\"\n    }\n  ],\n  \"overall_assessment\": \"<one sentence summary>\",\n  \"first_gauge_to_critical\": \"<gauge_name>\",\n  \"evacuation_window_hours\": <number>\n}\n\nRemember: Output ONLY valid JSON, no markdown, no explanation.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        704,
+        -56
+      ],
+      "id": "3ff38aa5-d337-4d15-915b-eaf1de796b9f",
+      "name": "FLOOD PREDICTOR AGENT",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the CONTROLLER AGENT for a flood emergency response system.\n\nINPUT DATA:\nYou receive real-time flood gauge readings and road network data.\n\nYOUR ROLE:\n1. Assess overall threat level based on water levels and rise rates\n2. Decide which specialized agents to activate\n3. Determine priority/urgency\n\nDECISION RULES:\n- If ANY gauge is > flood_stage AND rise_rate > 1.0: Threat = CRITICAL\n- If ANY gauge is > flood_stage OR rise_rate > 0.5: Threat = HIGH\n- If gauges approaching flood_stage: Threat = MODERATE\n- Otherwise: Threat = LOW\n\nYou coordinate two specialized agents:\n- FLOOD PREDICTOR AGENT: Forecasts when/where flooding will occur\n- ROAD SAFETY AGENT: Determines which roads will become impassable\n\nANALYZE THIS DATA:\nGauges: {{ JSON.stringify($('Transform USGS Data').item.json.gauges) }}\nRoads: {{ JSON.stringify($('Transform USGS Data').item.json.roads) }}\n\nOUTPUT (JSON only, no other text):\n{\n  \"threat_level\": \"CRITICAL|HIGH|MODERATE|LOW\",\n  \"activate_agents\": [\"flood_predictor\", \"road_safety\"],\n  \"highest_risk_gauge\": \"<gauge_name>\",\n  \"peak_water_level\": <number>,\n  \"estimated_time_to_critical_hours\": <number>,\n  \"affected_roads_count\": <estimated number>,\n  \"reasoning\": \"<one sentence explanation>\",\n  \"recommended_action\": \"IMMEDIATE_EVACUATION|PREPARE_TO_EVACUATE|MONITOR|NO_ACTION\",\n  \"gauges\": {{ JSON.stringify($json.gauges) }},\n  \"roads\": {{ JSON.stringify($json.roads) }}\n}\n\nRemember: Output ONLY valid JSON, no markdown, no explanation.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        352,
+        -160
+      ],
+      "id": "7599a194-79d0-4fa3-8995-e13f3d1fb1fd",
+      "name": "CONTROLLER AGENT",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        776,
+        168
+      ],
+      "id": "0a719df5-c381-4550-9d3c-2e8a59f436ad",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "q5YWh1zBKduZs38g",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1128,
+        168
+      ],
+      "id": "55f1dd03-441f-447d-8b87-2100f071a9ef",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "q5YWh1zBKduZs38g",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gather all agent outputs\nconst controller = $('CONTROLLER AGENT').item.json.output;\nconst floodPredictor = $('FLOOD PREDICTOR AGENT').item.json.output;\nconst roadSafety = $('ROAD SAFETY AGENT').item.json.output;\n\n// Parse JSON strings if needed\nconst parseIfString = (data) => {\n  if (typeof data === 'string') {\n    // Remove markdown code blocks\n    let cleaned = data.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    return JSON.parse(cleaned);\n  }\n  return data;\n};\n\nconst controllerData = parseIfString(controller);\nconst predictorData = parseIfString(floodPredictor);\nconst roadData = parseIfString(roadSafety);\n\n// Build comprehensive report\nconst emergencyReport = {\n  report_id: `FLOOD-${Date.now()}`,\n  generated_at: new Date().toISOString(),\n  \n  // Executive Summary\n  executive_summary: {\n    threat_level: controllerData.threat_level,\n    recommended_action: controllerData.recommended_action,\n    evacuation_window_hours: predictorData.evacuation_window_hours,\n    critical_situation: controllerData.threat_level === 'CRITICAL' || controllerData.threat_level === 'HIGH'\n  },\n  \n  // Gauge Status\n  gauge_analysis: {\n    highest_risk_gauge: controllerData.highest_risk_gauge,\n    peak_water_level: controllerData.peak_water_level,\n    first_gauge_to_critical: predictorData.first_gauge_to_critical,\n    predictions: predictorData.predictions\n  },\n  \n  // Road Status\n  road_analysis: {\n    total_roads: roadData.summary.total_roads_analyzed,\n    currently_flooded: roadData.summary.currently_flooded,\n    safe_evacuation_routes: roadData.summary.safe_evacuation_routes,\n    immediate_closures: roadData.summary.immediate_closures_needed,\n    detailed_status: roadData.road_status\n  },\n  \n  // Actionable Intelligence\n  recommended_actions: [\n    ...roadData.recommended_actions,\n    `Overall Assessment: ${predictorData.overall_assessment}`,\n    `Controller Reasoning: ${controllerData.reasoning}`\n  ],\n  \n  // Alert Level\n  alert_metadata: {\n    send_immediate_alert: controllerData.threat_level === 'CRITICAL',\n    send_warning: controllerData.threat_level === 'HIGH',\n    affected_roads_count: controllerData.affected_roads_count,\n    notification_priority: controllerData.threat_level === 'CRITICAL' ? 'URGENT' : \n                          controllerData.threat_level === 'HIGH' ? 'HIGH' : 'NORMAL'\n  }\n};\n\nreturn { json: emergencyReport };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        -56
+      ],
+      "id": "aae1d291-ff2e-457a-af84-d4ca3392fdf2",
+      "name": "EMERGENCY REPORT AGGREGATOR"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the ROAD SAFETY AGENT in a flood emergency response system.\n\nINPUT DATA:\nYou receive road network data with elevations and nearby gauge readings with water levels.\n\nYOUR ROLE:\n1. Determine which roads are currently flooded (water level > road elevation)\n2. Calculate when each road will become impassable\n3. Identify safe evacuation routes\n4. Prioritize road closures for emergency response\n\nANALYSIS RULES:\n- A road is FLOODED if: nearby_gauge water_level >= road elevation_min_ft\n- Calculate time to flooding: (road_elevation - current_water_level) / rise_rate\n- If time is negative or zero: road is ALREADY_FLOODED\n- Priority: motorway > trunk > primary > secondary\n- Consider rise rates for urgency\n\nANALYZE THIS DATA:\nGauges: Gauges: {{ JSON.stringify($('Transform USGS Data').item.json.gauges) }}\nRoads: Roads: {{ JSON.stringify($('Transform USGS Data').item.json.roads) }}\n\nOUTPUT (JSON only, no other text):\n{\n  \"assessment_timestamp\": \"<current ISO timestamp>\",\n  \"road_status\": [\n    {\n      \"road_id\": \"<road_id>\",\n      \"road_name\": \"<road_name>\",\n      \"road_type\": \"<motorway|trunk|primary|secondary>\",\n      \"elevation_min_ft\": <number>,\n      \"nearby_gauge_id\": \"<gauge_id>\",\n      \"current_water_level_ft\": <number>,\n      \"flood_stage_ft\": <number>,\n      \"status\": \"FLOODED|FLOODING_IMMINENT|AT_RISK|SAFE\",\n      \"time_to_impassable_hours\": <number or \"ALREADY_FLOODED\" or \"NO_RISK\">,\n      \"closure_priority\": \"IMMEDIATE|HIGH|MEDIUM|LOW\",\n      \"usable_for_evacuation\": <true/false>\n    }\n  ],\n  \"summary\": {\n    \"total_roads_analyzed\": <number>,\n    \"currently_flooded\": <number>,\n    \"flooding_within_1_hour\": <number>,\n    \"flooding_within_6_hours\": <number>,\n    \"safe_evacuation_routes\": [\"<road_name>\", ...],\n    \"immediate_closures_needed\": [\"<road_name>\", ...]\n  },\n  \"recommended_actions\": [\n    \"<specific action with road name and timeframe>\"\n  ]\n}\n\nRemember: Output ONLY valid JSON, no markdown, no explanation.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1056,
+        -56
+      ],
+      "id": "d3b18825-d9a7-449d-b3da-004a6a6358e0",
+      "name": "ROAD SAFETY AGENT",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=08074000,08075000&parameterCd=00065&siteStatus=active",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -992,
+        -80
+      ],
+      "id": "e181a543-51ff-40c2-bc01-aa18e40b8141",
+      "name": "USGS Real-Time Gauges",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// TRANSFORM USGS DATA - WITH NWS CONTEXT\n// ========================================\n\n// Get validator output to access NWS context\nlet validatorOutput = null;\ntry {\n  validatorOutput = $input.item.json;\n} catch (e) {\n  console.log(\"Could not access validator output\");\n}\n\n// Get USGS data - handle different formats\nlet usgsData = null;\n\n// First try to get from validator's raw_source_data\nif (validatorOutput && validatorOutput.raw_source_data) {\n  usgsData = validatorOutput.raw_source_data;\n}\n\n// Fallback: read directly from USGS node\nif (!usgsData) {\n  try {\n    usgsData = $('USGS Real-Time Gauges').first().json;\n  } catch (e) {\n    console.log(\"Could not access USGS node directly\");\n  }\n}\n\nif (!usgsData) {\n  throw new Error(\"No USGS data available\");\n}\n\n// Navigate to timeSeries - handle array or direct object\nlet timeSeries;\nif (Array.isArray(usgsData)) {\n  timeSeries = usgsData[0].value.timeSeries;\n} else if (usgsData.value && usgsData.value.timeSeries) {\n  timeSeries = usgsData.value.timeSeries;\n} else {\n  timeSeries = usgsData.timeSeries;\n}\n\n// Transform to our format\nconst transformedGauges = [];\n\n// Default flood stages for Houston bayous (you can customize these)\nconst floodStages = {\n  '08074000': 40.0,  // Buffalo Bayou\n  '08075000': 40.0   // Brays Bayou\n};\n\nfor (const series of timeSeries) {\n  const siteCode = series.sourceInfo.siteCode[0].value;\n  const siteName = series.sourceInfo.siteName;\n  const latitude = series.sourceInfo.geoLocation.geogLocation.latitude;\n  const longitude = series.sourceInfo.geoLocation.geogLocation.longitude;\n  \n  // Get the latest reading\n  const values = series.values[0].value;\n  const latestReading = values[values.length - 1];\n  const waterLevel = parseFloat(latestReading.value);\n  \n  // Calculate rise rate (simplified - using 0.5 ft/hr as default)\n  // In production, you'd fetch historical data to calculate actual rise rate\n  const riseRate = 0.5;\n  \n  transformedGauges.push({\n    gauge_id: siteCode,\n    gauge_name: siteName,\n    location: {\n      latitude: latitude,\n      longitude: longitude\n    },\n    current_water_level_ft: waterLevel,\n    flood_stage_ft: floodStages[siteCode] || 40.0,\n    rise_rate_ft_per_hour: riseRate,\n    status: riseRate > 0 ? \"RISING\" : \"STABLE\",\n    timestamp: latestReading.dateTime\n  });\n}\n\n// Road data (using real elevations for Houston roads)\nconst roadData = [\n  {\n    road_id: \"ROAD-001\",\n    road_name: \"I-10 West\",\n    road_type: \"motorway\",\n    elevation_min_ft: 35.0,\n    nearby_gauge: \"08074000\"\n  },\n  {\n    road_id: \"ROAD-002\",\n    road_name: \"Highway 288\",\n    road_type: \"trunk\",\n    elevation_min_ft: 42.0,\n    nearby_gauge: \"08074000\"\n  },\n  {\n    road_id: \"ROAD-003\",\n    road_name: \"Memorial Drive\",\n    road_type: \"primary\",\n    elevation_min_ft: 45.0,\n    nearby_gauge: \"08075000\"\n  }\n];\n\n// Extract NWS context from validator output\nconst nwsContext = {\n  active_warnings: validatorOutput?.nws_warnings_active || false,\n  warnings_count: validatorOutput?.nws_alerts?.alerts_count || 0,\n  warning_details: validatorOutput?.nws_alerts?.alert_details || [],\n  has_heavy_rain_forecast: validatorOutput?.heavy_rain_forecast || false,\n  precipitation_risk: validatorOutput?.precipitation_risk_level || \"UNKNOWN\",\n  avg_precip_48h: validatorOutput?.nws_forecast?.avg_precip_chance_48h || 0,\n  confidence_level: validatorOutput?.confidence_level || \"MEDIUM\",\n  data_quality: validatorOutput?.validation?.dataQuality || \"UNKNOWN\",\n  sources_available: validatorOutput?.sources_available || {},\n  failover_mode: validatorOutput?.failover_mode || false\n};\n\n// Return complete data with NWS context\nreturn {\n  json: {\n    gauges: transformedGauges,\n    roads: roadData,\n    scenario: \"Real-Time USGS Data\",\n    simulation_time: new Date().toISOString(),\n    data_source: \"USGS NWIS\",\n    usgs_sites: transformedGauges.map(g => g.gauge_id).join(', '),\n    \n    // NWS context for AI agents\n    nws_context: nwsContext,\n    \n    // Summary statistics for agents\n    summary: {\n      total_gauges: transformedGauges.length,\n      total_roads: roadData.length,\n      highest_water_level: Math.max(...transformedGauges.map(g => g.current_water_level_ft)),\n      lowest_water_level: Math.min(...transformedGauges.map(g => g.current_water_level_ft)),\n      avg_water_level: (transformedGauges.reduce((sum, g) => sum + g.current_water_level_ft, 0) / transformedGauges.length).toFixed(2)\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -56
+      ],
+      "id": "2685af52-4cc1-4e75-92d5-e47a28205229",
+      "name": "Transform USGS Data"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1440,
+        404
+      ],
+      "id": "607c2db4-a900-40d9-83ec-d16f61fa103b",
+      "name": "Every 15 Minutes"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "632b6142-bb9d-48f5-9029-2f3a1962a619",
+                    "leftValue": "={{ $json.alert_metadata.send_immediate_alert }}",
+                    "rightValue": "TRUE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2d305b74-fccc-4383-84a7-88c1341fc73c",
+                    "leftValue": "={{ $json.executive_summary.threat_level }}",
+                    "rightValue": "CRITICAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2752,
+        -56
+      ],
+      "id": "d5c21b9c-f0a2-4160-900e-f09bbda39097",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "fromEmail": "praptisanghavi@gmail.com",
+        "toEmail": "praptisanghavi@gmail.com",
+        "subject": "=🚨 FLOOD ALERT: {{ $json.executive_summary.threat_level }} Threat in Houston",
+        "html": "=<html>\n<head>\n<style>\n  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; }\n  table { width: 100%; border-collapse: collapse; margin: 10px 0; }\n  th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }\n  tr:nth-child(even) { background-color: #f2f2f2; }\n  .info-box { background: #e8f5e9; border-left: 5px solid #4caf50; padding: 15px; margin: 20px 0; }\n  .critical-box { background: #ffe4e1; border-left: 5px solid #d32f2f; padding: 20px; margin: 25px 0; }\n  .high-box { background: #fff3cd; border-left: 5px solid #ff9800; padding: 20px; margin: 25px 0; }\n  .button { background: #d32f2f; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; }\n</style>\n</head>\n<body>\n\n<!-- Alert Suppression for Low-Threat Reports -->\n<div style=\"display: {{ $json.alert_metadata?.send_immediate_alert === false ? 'block' : 'none' }};\" class=\"info-box\">\n  <p><strong>ℹ️ INFO:</strong> This is a routine monitoring report.</p>\n  <p>No immediate action required. Conditions are being monitored.</p>\n</div>\n\n<h1>🚨 FLOOD ALERT - HOUSTON</h1>\n<p><strong>IMMEDIATE ATTENTION REQUIRED</strong></p>\n<hr>\n\n<h2>📊 THREAT ASSESSMENT</h2>\n<table>\n  <tr>\n    <td><strong>Threat Level</strong></td>\n    <td style=\"font-size: 18px; font-weight: bold; color: {{ $json.executive_summary.threat_level === 'CRITICAL' ? '#d32f2f' : $json.executive_summary.threat_level === 'HIGH' ? '#ff9800' : '#333' }}\">\n      {{ $json.executive_summary.threat_level }}\n    </td>\n  </tr>\n  <tr>\n    <td><strong>Recommended Action</strong></td>\n    <td>{{ $json.executive_summary.recommended_action }}</td>\n  </tr>\n  <tr>\n    <td><strong>Evacuation Window</strong></td>\n    <td>{{ $json.executive_summary.evacuation_window_hours }} hours</td>\n  </tr>\n  <tr>\n    <td><strong>Report ID</strong></td>\n    <td>{{ $json.report_id }}</td>\n  </tr>\n  <tr>\n    <td><strong>Generated At</strong></td>\n    <td>{{ $json.generated_at }}</td>\n  </tr>\n</table>\n\n<hr>\n\n<h2>🌊 GAUGE ANALYSIS</h2>\n<table>\n  <tr>\n    <td><strong>Highest Risk Gauge</strong></td>\n    <td>{{ $json.executive_summary.highest_risk_gauge }}</td>\n  </tr>\n  <tr>\n    <td><strong>Peak Water Level</strong></td>\n    <td>{{ $json.executive_summary.peak_water_level }} ft</td>\n  </tr>\n  <tr>\n    <td><strong>First to Critical</strong></td>\n    <td>{{ $json.executive_summary.first_gauge_to_critical }}</td>\n  </tr>\n</table>\n\n<h3>Detailed Predictions:</h3>\n<table>\n  <tr style=\"background-color: #4CAF50; color: white;\">\n    <th>Gauge</th>\n    <th>Current</th>\n    <th>Flood Stage</th>\n    <th>6hr</th>\n    <th>12hr</th>\n    <th>24hr</th>\n    <th>Time to Flood</th>\n    <th>Severity</th>\n  </tr>\n  {{ $json.gauge_analysis.predictions.map(p => `\n  <tr>\n    <td>${p.gauge_name}</td>\n    <td>${p.current_water_level_ft} ft</td>\n    <td>${p.flood_stage_ft} ft</td>\n    <td>${p.forecasted_levels.in_6_hours} ft</td>\n    <td>${p.forecasted_levels.in_12_hours} ft</td>\n    <td>${p.forecasted_levels.in_24_hours} ft</td>\n    <td>${p.time_to_flood_stage_hours} hrs</td>\n    <td style=\"font-weight: bold; color: ${p.severity === 'HIGH' ? '#d32f2f' : p.severity === 'MEDIUM' ? '#ff9800' : '#4CAF50'}\">${p.severity}</td>\n  </tr>\n  `).join('') }}\n</table>\n\n<hr>\n\n<h2>🚗 ROAD STATUS</h2>\n<table>\n  <tr>\n    <td><strong>Total Roads Monitored</strong></td>\n    <td>{{ $json.road_analysis.total_roads }}</td>\n  </tr>\n  <tr>\n    <td><strong>Currently Flooded</strong></td>\n    <td style=\"font-weight: bold; color: {{ $json.road_analysis.currently_flooded > 0 ? '#d32f2f' : '#4CAF50' }}\">\n      {{ $json.road_analysis.currently_flooded }} roads\n    </td>\n  </tr>\n  <tr>\n    <td><strong>Safe Evacuation Routes</strong></td>\n    <td>{{ $json.road_analysis.safe_evacuation_routes.length }} available</td>\n  </tr>\n</table>\n\n<h3>Safe Routes:</h3>\n<ul>\n{{ $json.road_analysis.safe_evacuation_routes.map(road => `<li>${road}</li>`).join('') }}\n</ul>\n\n<div style=\"display: {{ $json.road_analysis.immediate_closures.length > 0 ? 'block' : 'none' }};\">\n  <h3 style=\"color: #d32f2f;\">⚠️ Immediate Closures:</h3>\n  <ul>\n  {{ $json.road_analysis.immediate_closures.map(road => `<li style=\"color: #d32f2f; font-weight: bold;\">${road}</li>`).join('') }}\n  </ul>\n</div>\n\n<h3>Detailed Road Status:</h3>\n<table>\n  <tr style=\"background-color: #4CAF50; color: white;\">\n    <th>Road Name</th>\n    <th>Status</th>\n    <th>Current Water</th>\n    <th>Time to Impassable</th>\n    <th>Evacuation Safe</th>\n  </tr>\n  {{ $json.road_analysis.detailed_status.map(road => `\n  <tr>\n    <td>${road.road_name}</td>\n    <td style=\"font-weight: bold; color: ${road.status === 'FLOODED' ? '#d32f2f' : road.status === 'WARNING' ? '#ff9800' : '#4CAF50'}\">${road.status}</td>\n    <td>${road.current_water_level_ft} ft</td>\n    <td>${road.time_to_impassable_hours} hours</td>\n    <td>${road.usable_for_evacuation ? '✅ Yes' : '❌ No'}</td>\n  </tr>\n  `).join('') }}\n</table>\n\n<hr>\n\n<h2>📋 RECOMMENDED ACTIONS</h2>\n<ol>\n{{ $json.recommended_actions.map(action => `<li>${action}</li>`).join('') }}\n</ol>\n\n<hr>\n\n<p style=\"font-size: 12px; color: #666; margin-top: 30px;\">\n  <strong>System Information:</strong><br>\n  This is an automated alert from the Houston Flood Monitoring System.<br>\n  Report ID: {{ $json.report_id }}<br>\n  Generated: {{ $json.generated_at }}<br>\n</p>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2976,
+        -56
+      ],
+      "id": "1928d092-8956-4190-bb54-b05b50f07de2",
+      "name": "Send email",
+      "webhookId": "a85c0230-a464-439b-bc13-03f0cef5b40e",
+      "notesInFlow": false,
+      "retryOnFail": true,
+      "credentials": {
+        "smtp": {
+          "id": "evvnJSziPeFNhlCc",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// DATA QUALITY VALIDATOR - 4 SOURCE VERSION\n// Enterprise-Grade Multi-Source Validation\n// Sources: USGS + NOAA + NWS Alerts + NWS Forecast\n// Handles missing/failed sources gracefully\n// ========================================\n\n// ========================================\n// 1. GET DATA FROM ALL SOURCES (BULLETPROOF)\n// ========================================\nlet usgsData = null;\nlet noaaData = null;\nlet nwsAlertsData = null;\nlet nwsForecastData = null;\n\n// Try to get data from connected inputs\ntry {\n  const inputData = $input.all();\n  for (const item of inputData) {\n    try {\n      const nodeName = (item.json.$node?.name || \"\").toLowerCase();\n      \n      if (nodeName.includes(\"usgs\")) {\n        usgsData = item.json;\n      } else if (nodeName.includes(\"noaa\")) {\n        noaaData = item.json;\n      } else if (nodeName.includes(\"alert\")) {\n        nwsAlertsData = item.json;\n      } else if (nodeName.includes(\"forecast\") || nodeName.includes(\"weather\")) {\n        nwsForecastData = item.json;\n      }\n    } catch (e) {\n      console.log(\"Error reading input item:\", e);\n    }\n  }\n} catch (e) {\n  console.log(\"Error reading inputs:\", e);\n}\n\n// Fallback: Try direct node references\nif (!usgsData) {\n  try {\n    const items = $('USGS Real-Time Gauges').all();\n    if (items && items.length > 0) usgsData = items[0].json;\n  } catch (e) { console.log(\"USGS not available\"); }\n}\n\nif (!noaaData) {\n  try {\n    const items = $('NOAA Tide Gauges (Backup)').all();\n    if (items && items.length > 0) noaaData = items[0].json;\n  } catch (e) { console.log(\"NOAA not available\"); }\n}\n\nif (!nwsAlertsData) {\n  try {\n    const items = $('NWS Flood Alerts').all();\n    if (items && items.length > 0) nwsAlertsData = items[0].json;\n  } catch (e) { console.log(\"NWS Alerts not available\"); }\n}\n\nif (!nwsForecastData) {\n  try {\n    const items = $('NWS Weather Forecast').all();\n    if (items && items.length > 0) nwsForecastData = items[0].json;\n  } catch (e) { console.log(\"NWS Forecast not available\"); }\n}\n\n// ========================================\n// 2. PARSE USGS GAUGE DATA\n// ========================================\nlet usgsAvailable = false;\nlet usgsGauges = [];\n\nif (usgsData) {\n  try {\n    let timeSeries = null;\n    \n    if (Array.isArray(usgsData)) {\n      timeSeries = usgsData[0]?.value?.timeSeries;\n    } else if (usgsData?.value?.timeSeries) {\n      timeSeries = usgsData.value.timeSeries;\n    } else if (usgsData?.timeSeries) {\n      timeSeries = usgsData.timeSeries;\n    }\n    \n    if (timeSeries && timeSeries.length > 0) {\n      usgsAvailable = true;\n      \n      for (const series of timeSeries) {\n        try {\n          const values = series.values[0].value;\n          const latestReading = values[values.length - 1];\n          const waterLevel = parseFloat(latestReading.value);\n          const timestamp = latestReading.dateTime;\n          const dataAge = (Date.now() - new Date(timestamp).getTime()) / (1000 * 60 * 60);\n          \n          let status = \"GOOD\";\n          if (dataAge > 2) status = \"STALE\";\n          else if (waterLevel < 0) status = \"INVALID\";\n          else if (waterLevel > 100) status = \"SUSPICIOUS\";\n          \n          usgsGauges.push({\n            gauge_id: series.sourceInfo.siteCode[0].value,\n            gauge_name: series.sourceInfo.siteName,\n            water_level: waterLevel,\n            timestamp: timestamp,\n            data_age_hours: parseFloat(dataAge.toFixed(2)),\n            status: status\n          });\n        } catch (e) {\n          console.log(\"Error parsing USGS gauge:\", e);\n        }\n      }\n    }\n  } catch (error) {\n    console.log(\"USGS parsing error:\", error);\n  }\n}\n\n// ========================================\n// 3. PARSE NOAA TIDE DATA\n// ========================================\nlet noaaAvailable = false;\nlet noaaCheck = null;\n\nif (noaaData) {\n  try {\n    if (noaaData?.data && noaaData.data.length > 0) {\n      const latest = noaaData.data[0];\n      const level = parseFloat(latest.v);\n      const timestamp = latest.t;\n      const dataAge = (Date.now() - new Date(timestamp).getTime()) / (1000 * 60 * 60);\n      \n      let status = \"GOOD\";\n      if (dataAge > 2) status = \"STALE\";\n      else if (level < -5 || level > 20) status = \"SUSPICIOUS\";\n      \n      if (status === \"GOOD\" || status === \"STALE\") {\n        noaaAvailable = true;\n        noaaCheck = {\n          source: \"NOAA Galveston Bay\",\n          station_id: \"8771450\",\n          water_level: level,\n          timestamp: timestamp,\n          data_age_hours: parseFloat(dataAge.toFixed(2)),\n          status: status\n        };\n      }\n    }\n  } catch (error) {\n    console.log(\"NOAA parsing error:\", error);\n  }\n}\n\n// ========================================\n// 4. PARSE NWS FLOOD ALERTS\n// ========================================\nlet nwsAlertsAvailable = false;\nlet nwsAlerts = [];\nlet hasActiveWarnings = false;\n\nif (nwsAlertsData) {\n  try {\n    if (nwsAlertsData?.features && Array.isArray(nwsAlertsData.features)) {\n      nwsAlertsAvailable = true;\n      \n      for (const alert of nwsAlertsData.features) {\n        try {\n          const props = alert.properties;\n          const areas = (props.areaDesc || \"\").toLowerCase();\n          \n          if (areas.includes(\"harris\") || areas.includes(\"houston\")) {\n            hasActiveWarnings = true;\n            nwsAlerts.push({\n              event: props.event,\n              severity: props.severity,\n              urgency: props.urgency,\n              headline: props.headline,\n              areas: props.areaDesc,\n              onset: props.onset,\n              expires: props.expires\n            });\n          }\n        } catch (e) {\n          console.log(\"Error parsing NWS alert:\", e);\n        }\n      }\n    }\n  } catch (error) {\n    console.log(\"NWS alerts parsing error:\", error);\n  }\n}\n\n// ========================================\n// 5. PARSE NWS WEATHER FORECAST\n// ========================================\nlet nwsForecastAvailable = false;\nlet hasHeavyRainForecast = false;\nlet precipitationRisk = \"UNKNOWN\";\nlet avgPrecipChance = 0;\n\nif (nwsForecastData) {\n  try {\n    if (nwsForecastData?.properties?.periods) {\n      nwsForecastAvailable = true;\n      const next48Hours = nwsForecastData.properties.periods.slice(0, 4);\n      \n      let totalPrecip = 0;\n      let rainPeriods = 0;\n      \n      for (const period of next48Hours) {\n        try {\n          const prob = period.probabilityOfPrecipitation?.value || 0;\n          totalPrecip += prob;\n          \n          if (prob > 50) rainPeriods++;\n          \n          const forecast = (period.detailedForecast || \"\").toLowerCase();\n          if (forecast.includes(\"heavy rain\") || \n              forecast.includes(\"thunderstorm\") || \n              forecast.includes(\"flooding\")) {\n            hasHeavyRainForecast = true;\n          }\n        } catch (e) {\n          console.log(\"Error parsing forecast period:\", e);\n        }\n      }\n      \n      avgPrecipChance = Math.round(totalPrecip / next48Hours.length);\n      \n      if (avgPrecipChance > 70 || hasHeavyRainForecast) {\n        precipitationRisk = \"HIGH\";\n      } else if (avgPrecipChance > 40) {\n        precipitationRisk = \"MODERATE\";\n      } else if (avgPrecipChance > 20) {\n        precipitationRisk = \"LOW\";\n      } else {\n        precipitationRisk = \"MINIMAL\";\n      }\n    }\n  } catch (error) {\n    console.log(\"NWS forecast parsing error:\", error);\n  }\n}\n\n// ========================================\n// 6. VALIDATION & QUALITY ASSESSMENT\n// ========================================\nconst goodGauges = usgsGauges.filter(g => g.status === \"GOOD\");\nconst hasGoodUSGS = goodGauges.length > 0;\nconst hasGoodNOAA = noaaAvailable && noaaCheck?.status === \"GOOD\";\n\nconst validationReport = {\n  timestamp: new Date().toISOString(),\n  checks: [],\n  warnings: [],\n  dataQuality: \"UNKNOWN\",\n  useSources: []\n};\n\n// Data quality warnings\nusgsGauges.forEach(g => {\n  if (g.status === \"STALE\") {\n    validationReport.warnings.push(`${g.gauge_name}: Data ${g.data_age_hours}hrs old`);\n  } else if (g.status === \"INVALID\" || g.status === \"SUSPICIOUS\") {\n    validationReport.warnings.push(`${g.gauge_name}: ${g.status} reading (${g.water_level}ft)`);\n  }\n});\n\nif (noaaCheck?.status === \"STALE\") {\n  validationReport.warnings.push(`NOAA: Data ${noaaCheck.data_age_hours}hrs old`);\n}\n\nif (!noaaAvailable && noaaData === null) {\n  validationReport.warnings.push(\"⚠️ NOAA data source unavailable\");\n}\n\n// ========================================\n// 7. CROSS-VALIDATION & RISK ASSESSMENT\n// ========================================\n\n// Check 1: NWS warnings + high gauge levels = HIGH CONFIDENCE\nif (hasActiveWarnings && hasGoodUSGS) {\n  const avgLevel = goodGauges.reduce((sum, g) => sum + g.water_level, 0) / goodGauges.length;\n  validationReport.checks.push({\n    type: \"CROSS_VALIDATION_ALERTS\",\n    nws_warnings: nwsAlerts.length,\n    usgs_avg_level: avgLevel.toFixed(2),\n    assessment: \"Multiple sources confirm elevated risk\"\n  });\n}\n\n// Check 2: High gauges but no NWS warning = INVESTIGATE\nif (hasGoodUSGS && goodGauges.some(g => g.water_level > 40) && !hasActiveWarnings) {\n  validationReport.warnings.push(\"⚠️ High gauge readings but no NWS warnings - verify conditions\");\n}\n\n// Check 3: Heavy rain forecast + elevated levels = CRITICAL\nif (hasHeavyRainForecast && hasGoodUSGS && goodGauges.some(g => g.water_level > 30)) {\n  validationReport.warnings.push(\"🚨 CRITICAL: Heavy rain forecast with elevated water levels\");\n  validationReport.checks.push({\n    type: \"PREDICTIVE_RISK\",\n    current_state: \"ELEVATED\",\n    forecast: \"HEAVY_RAIN\",\n    risk: \"CRITICAL\"\n  });\n}\n\n// Check 4: Heavy rain forecast + normal levels = PREPARE\nif (hasHeavyRainForecast && hasGoodUSGS && goodGauges.every(g => g.water_level < 20)) {\n  validationReport.warnings.push(\"⚠️ PREPARE: Heavy rain forecast - monitor closely\");\n  validationReport.checks.push({\n    type: \"PREDICTIVE_RISK\",\n    current_state: \"NORMAL\",\n    forecast: \"HEAVY_RAIN\",\n    risk: \"PREPARE\"\n  });\n}\n\n// Check 5: Moderate rain + warnings = ELEVATED\nif (precipitationRisk === \"MODERATE\" && hasActiveWarnings) {\n  validationReport.warnings.push(\"⚠️ Moderate rain forecast with active warnings\");\n}\n\n// ========================================\n// 8. DETERMINE OVERALL DATA QUALITY\n// ========================================\nif (!usgsAvailable && !noaaAvailable && !nwsAlertsAvailable && !nwsForecastAvailable) {\n  validationReport.dataQuality = \"CRITICAL_FAILURE\";\n  validationReport.warnings.push(\"🚨 ALL DATA SOURCES UNAVAILABLE\");\n} else if (hasGoodUSGS) {\n  if (hasActiveWarnings) {\n    validationReport.dataQuality = \"EXCELLENT_WITH_WARNINGS\";\n    validationReport.useSources = [\"USGS\", \"NWS_ALERTS\"];\n  } else {\n    validationReport.dataQuality = goodGauges.length === usgsGauges.length ? \"EXCELLENT\" : \"GOOD\";\n    validationReport.useSources = [\"USGS\"];\n  }\n} else if (hasGoodNOAA) {\n  validationReport.dataQuality = \"FAIR\";\n  validationReport.useSources = [\"NOAA\"];\n  validationReport.warnings.push(\"⚠️ FAILOVER: Using NOAA - USGS unavailable\");\n} else if (hasActiveWarnings) {\n  validationReport.dataQuality = \"WARNING_ONLY\";\n  validationReport.useSources = [\"NWS_ALERTS\"];\n  validationReport.warnings.push(\"⚠️ Only NWS warnings - no gauge data\");\n} else {\n  validationReport.dataQuality = \"POOR\";\n  validationReport.warnings.push(\"⚠️ DATA QUALITY ISSUES\");\n}\n\n// ========================================\n// 9. SELECT PRIMARY DATA SOURCE\n// ========================================\nlet useSource = \"NONE\";\nlet sourceData = null;\n\nif (hasGoodUSGS) {\n  useSource = \"USGS\";\n  sourceData = usgsData;\n} else if (hasGoodNOAA) {\n  useSource = \"NOAA\";\n  sourceData = noaaData;\n  validationReport.warnings.push(\"⚠️ FAILOVER: Using NOAA backup\");\n} else if (hasActiveWarnings) {\n  useSource = \"NWS_ONLY\";\n  sourceData = nwsAlertsData;\n  validationReport.warnings.push(\"⚠️ Only warnings available - no gauge data\");\n}\n\n// ========================================\n// 10. CALCULATE CONFIDENCE LEVEL\n// ========================================\nlet confidenceLevel = \"LOW\";\n\nif (hasGoodUSGS && (hasActiveWarnings || hasHeavyRainForecast)) {\n  confidenceLevel = \"VERY_HIGH\";\n} else if (hasGoodUSGS && nwsAlertsAvailable) {\n  confidenceLevel = \"HIGH\";\n} else if (hasGoodUSGS) {\n  confidenceLevel = \"MEDIUM\";\n}\n\n// ========================================\n// 11. RETURN COMPLETE VALIDATION RESULTS\n// ========================================\nreturn {\n  json: {\n    // Core validation\n    validation: validationReport,\n    data_source_to_use: useSource,\n    raw_source_data: sourceData,\n    proceed_with_analysis: useSource !== \"NONE\",\n    \n    // Source data\n    usgs_gauges: usgsGauges,\n    noaa_data: noaaCheck,\n    nws_alerts: {\n      source: \"NWS Flood Alerts\",\n      alerts_count: nwsAlerts.length,\n      has_active_warnings: hasActiveWarnings,\n      alert_details: nwsAlerts,\n      status: nwsAlertsAvailable ? \"AVAILABLE\" : \"UNAVAILABLE\"\n    },\n    nws_forecast: {\n      source: \"NWS Weather Forecast\",\n      avg_precip_chance_48h: avgPrecipChance,\n      has_heavy_rain_forecast: hasHeavyRainForecast,\n      precipitation_risk: precipitationRisk,\n      status: nwsForecastAvailable ? \"AVAILABLE\" : \"UNAVAILABLE\"\n    },\n    \n    // Metrics\n    good_gauges_count: goodGauges.length,\n    total_gauges_count: usgsGauges.length,\n    failover_mode: useSource === \"NOAA\" || useSource === \"NWS_ONLY\",\n    confidence_level: confidenceLevel,\n    \n    // Risk indicators\n    nws_warnings_active: hasActiveWarnings,\n    heavy_rain_forecast: hasHeavyRainForecast,\n    precipitation_risk_level: precipitationRisk,\n    \n    // Source availability\n    sources_available: {\n      usgs: usgsAvailable,\n      noaa: noaaAvailable,\n      nws_alerts: nwsAlertsAvailable,\n      nws_forecast: nwsForecastAvailable\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        140
+      ],
+      "id": "f8373d18-c2cc-4c5d-80f7-caa78c9ae7d4",
+      "name": "Data Quality Validator",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "praptisanghavi@gmail.com",
+        "toEmail": "info@example.com",
+        "subject": "🚨 FLOOD SYSTEM: DATA FAILURE",
+        "html": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff3cd; border: 3px solid #ff6b6b; border-radius: 10px;\">\n    \n    <h1 style=\"color: #e53e3e; text-align: center;\">🚨 CRITICAL SYSTEM ALERT</h1>\n    \n    <div style=\"background: white; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n        <h2 style=\"color: #2d3748;\">⚠️ Flood Monitoring System Cannot Obtain Reliable Data</h2>\n        <p style=\"font-size: 16px; color: #4a5568;\">The automated flood monitoring system has detected a data quality failure and cannot proceed with analysis.</p>\n    </div>\n\n    <div style=\"background: #fff; padding: 15px; border-left: 4px solid #e53e3e; margin: 15px 0;\">\n        <h3 style=\"color: #2d3748; margin-top: 0;\">Data Quality Status:</h3>\n        <p style=\"font-size: 18px; font-weight: bold; color: #e53e3e;\">\n            {{ $json.validation.dataQuality }}\n        </p>\n    </div>\n\n    <div style=\"background: #fff; padding: 15px; border-left: 4px solid #ed8936; margin: 15px 0;\">\n        <h3 style=\"color: #2d3748; margin-top: 0;\">⚠️ Warnings:</h3>\n        <ul style=\"color: #4a5568;\">\n            {{#each $json.validation.warnings}}\n            <li style=\"margin: 8px 0;\">{{ this }}</li>\n            {{/each}}\n        </ul>\n    </div>\n\n    <div style=\"background: #f7fafc; padding: 15px; border-radius: 8px; margin: 15px 0;\">\n        <h3 style=\"color: #2d3748; margin-top: 0;\">System Status:</h3>\n        <table style=\"width: 100%; border-collapse: collapse;\">\n            <tr>\n                <td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\"><strong>Primary Source:</strong></td>\n                <td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">{{ $json.primary_source }}</td>\n            </tr>\n            <tr>\n                <td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\"><strong>NOAA Backup Available:</strong></td>\n                <td style=\"padding: 8px; border-bottom: 1px solid #e2e8f0;\">{{ $json.backup_available }}</td>\n            </tr>\n            <tr>\n                <td style=\"padding: 8px;\"><strong>Timestamp:</strong></td>\n                <td style=\"padding: 8px;\">{{ $json.validation.timestamp }}</td>\n            </tr>\n        </table>\n    </div>\n\n    <div style=\"background: #e53e3e; color: white; padding: 20px; border-radius: 8px; margin: 20px 0;\">\n        <h3 style=\"margin-top: 0;\">🔧 ACTION REQUIRED:</h3>\n        <ul style=\"line-height: 1.8;\">\n            <li>Manually check USGS website: <a href=\"https://waterdata.usgs.gov/tx/nwis/current/?type=flow\" style=\"color: #ffd700;\">waterdata.usgs.gov</a></li>\n            <li>Manually check NOAA website: <a href=\"https://tidesandcurrents.noaa.gov/\" style=\"color: #ffd700;\">tidesandcurrents.noaa.gov</a></li>\n            <li>Investigate system connectivity issues</li>\n            <li>Check n8n workflow logs for errors</li>\n        </ul>\n    </div>\n\n    <div style=\"text-align: center; color: #718096; margin-top: 30px; font-size: 12px;\">\n        <p>Houston Flood Monitoring System - Data Quality Alert</p>\n        <p>This is an automated message from your n8n workflow</p>\n    </div>\n\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        476
+      ],
+      "id": "111a3dd8-bdb3-4980-bd9a-361dde2c4544",
+      "name": "Send email1",
+      "webhookId": "409b778d-b65d-4c75-9fca-cae8030fd394",
+      "retryOnFail": true,
+      "credentials": {
+        "smtp": {
+          "id": "evvnJSziPeFNhlCc",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=8771450&product=water_level&datum=MLLW&units=english&time_zone=lst&format=json&date=latest",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -992,
+        496
+      ],
+      "id": "fb059765-e496-4938-b143-280a84ec3639",
+      "name": "NOAA Tide Gauges (Backup)",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data_source_to_use }}",
+                    "rightValue": "USGS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "23044120-ea9f-413e-ad9d-544c37f37095"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c70a8b87-28da-44a4-ba83-b65a985ceb2a",
+                    "leftValue": "={{ $json.data_source_to_use }}",
+                    "rightValue": "NOAA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "49af5e46-b20d-45fe-9056-cb141cb9e09a",
+                    "leftValue": "={{ $json.data_source_to_use }}",
+                    "rightValue": "NONE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -544,
+        124
+      ],
+      "id": "5b9301ac-48d6-4ddf-8e63-e55c82b7a77c",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform NOAA backup data to standard format\nconst validatorOutput = $input.item.json;\nconst noaaRawData = validatorOutput.raw_source_data;\n\nconst noaaGauges = [];\n\ntry {\n  if (noaaRawData && noaaRawData.data && noaaRawData.data.length > 0) {\n    const latestNoaa = noaaRawData.data[0];\n    const waterLevel = parseFloat(latestNoaa.v);\n    const timestamp = latestNoaa.t;\n    \n    // Estimate rise rate (simplified)\n    const riseRate = 0.5;\n    \n    noaaGauges.push({\n      gauge_id: \"NOAA-8771450\",\n      gauge_name: \"Galveston Bay (NOAA Backup)\",\n      location: {\n        latitude: 29.3108,\n        longitude: -94.7933\n      },\n      current_water_level_ft: waterLevel,\n      flood_stage_ft: 8.0,\n      rise_rate_ft_per_hour: riseRate,\n      status: \"RISING\",\n      timestamp: timestamp,\n      data_source: \"NOAA_FAILOVER\"\n    });\n  }\n} catch (error) {\n  console.error(\"Error transforming NOAA data:\", error);\n}\n\nconst roadData = [\n  {\n    road_id: \"ROAD-001\",\n    road_name: \"I-10 West\",\n    road_type: \"motorway\",\n    elevation_min_ft: 35.0,\n    nearby_gauge: \"NOAA-8771450\"\n  },\n  {\n    road_id: \"ROAD-002\",\n    road_name: \"Highway 288\",\n    road_type: \"trunk\",\n    elevation_min_ft: 42.0,\n    nearby_gauge: \"NOAA-8771450\"\n  },\n  {\n    road_id: \"ROAD-003\",\n    road_name: \"Memorial Drive\",\n    road_type: \"primary\",\n    elevation_min_ft: 45.0,\n    nearby_gauge: \"NOAA-8771450\"\n  }\n];\n\nreturn {\n  json: {\n    gauges: noaaGauges,\n    roads: roadData,\n    scenario: \"NOAA Failover Data\",\n    simulation_time: new Date().toISOString(),\n    data_source: \"NOAA BACKUP\",\n    failover_mode: true,\n    warning: \"⚠️ Running on backup NOAA data - USGS unavailable\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        332
+      ],
+      "id": "d935c097-187b-482a-8987-fb3ed6cad412",
+      "name": "Transform NOAA Data"
+    },
+    {
+      "parameters": {
+        "url": "https://api.weather.gov/alerts/active?area=TX&event=Flood%20Warning,Flash%20Flood%20Warning,Flood%20Watch",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -992,
+        304
+      ],
+      "id": "aeac5d66-6571-4edc-a7d4-a00e77e6d251",
+      "name": "NWS Flood Alerts",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "url": "https://api.weather.gov/gridpoints/HGX/67,98/forecast",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -992,
+        688
+      ],
+      "id": "3364d25f-7942-41ce-8891-8e7fbe337559",
+      "name": "NWS Weather Forecast",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format aggregator output for Google Sheets logging\nconst report = $input.item.json;\n\n// Extract key data\nconst timestamp = new Date().toISOString();\nconst reportId = report.report_id || \"UNKNOWN\";\nconst exec = report.executive_summary || {};\nconst gaugeAnalysis = report.gauge_analysis || {};\nconst roadAnalysis = report.road_analysis || {};\nconst alertMeta = report.alert_metadata || {};\n\n// Get gauge predictions\nconst buffaloGauge = gaugeAnalysis.predictions?.find(g => g.gauge_id === \"08074000\") || {};\nconst braysGauge = gaugeAnalysis.predictions?.find(g => g.gauge_id === \"08075000\") || {};\n\n// Get NWS context (if exists)\nconst nwsContext = report.nws_context || {};\n\nreturn {\n  json: {\n    Timestamp: timestamp,\n    Report_ID: reportId,\n    Threat_Level: exec.threat_level || \"UNKNOWN\",\n    \n    // Buffalo Bayou data\n    Buffalo_Current_Level: buffaloGauge.current_water_level_ft || 0,\n    Buffalo_Predicted_6hr: buffaloGauge.forecasted_levels?.in_6_hours || 0,\n    Buffalo_Predicted_12hr: buffaloGauge.forecasted_levels?.in_12_hours || 0,\n    Buffalo_Predicted_24hr: buffaloGauge.forecasted_levels?.in_24_hours || 0,\n    Buffalo_Time_To_Flood: buffaloGauge.time_to_flood_stage_hours || 999,\n    Buffalo_Will_Flood: buffaloGauge.will_flood || false,\n    \n    // Brays Bayou data\n    Brays_Current_Level: braysGauge.current_water_level_ft || 0,\n    Brays_Predicted_6hr: braysGauge.forecasted_levels?.in_6_hours || 0,\n    Brays_Predicted_12hr: braysGauge.forecasted_levels?.in_12_hours || 0,\n    Brays_Predicted_24hr: braysGauge.forecasted_levels?.in_24_hours || 0,\n    Brays_Time_To_Flood: braysGauge.time_to_flood_stage_hours || 999,\n    Brays_Will_Flood: braysGauge.will_flood || false,\n    \n    // Overall metrics\n    Evacuation_Window_Hours: exec.evacuation_window_hours || 999,\n    Safe_Routes_Count: roadAnalysis.safe_evacuation_routes?.length || 0,\n    Currently_Flooded_Roads: roadAnalysis.currently_flooded || 0,\n    \n    // NWS Context\n    NWS_Warnings_Active: nwsContext.active_warnings || false,\n    Heavy_Rain_Forecast: nwsContext.has_heavy_rain_forecast || false,\n    Precipitation_Risk: nwsContext.precipitation_risk || \"UNKNOWN\",\n    Confidence_Level: nwsContext.confidence_level || \"UNKNOWN\",\n    Data_Quality: nwsContext.data_quality || \"UNKNOWN\",\n    Primary_Data_Source: \"USGS\", // You can make this dynamic\n    \n    // For later verification\n    Outcome_Verified: \"NO\",\n    Actual_Buffalo_6hr: \"\",\n    Actual_Buffalo_12hr: \"\",\n    Actual_Buffalo_24hr: \"\",\n    Actual_Brays_6hr: \"\",\n    Actual_Brays_12hr: \"\",\n    Actual_Brays_24hr: \"\",\n    Notes: \"\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        -56
+      ],
+      "id": "a3e9c8fd-0681-4d21-9e26-0ceb0506e785",
+      "name": "Format Data for Historical Log"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Predictions Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Report_ID"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Report_ID",
+              "displayName": "Report_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Threat_Level",
+              "displayName": "Threat_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Buffalo_Current_Level",
+              "displayName": "Buffalo_Current_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Buffalo_Predicted_6hr",
+              "displayName": "Buffalo_Predicted_6hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Buffalo_Predicted_12hr",
+              "displayName": "Buffalo_Predicted_12hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Buffalo_Predicted_24hr",
+              "displayName": "Buffalo_Predicted_24hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Buffalo_Time_To_Flood",
+              "displayName": "Buffalo_Time_To_Flood",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brays_Current_Level",
+              "displayName": "Brays_Current_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brays_Predicted_6hr",
+              "displayName": "Brays_Predicted_6hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brays_Predicted_12hr",
+              "displayName": "Brays_Predicted_12hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brays_Predicted_24hr",
+              "displayName": "Brays_Predicted_24hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brays_Time_To_Flood",
+              "displayName": "Brays_Time_To_Flood",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Evacuation_Window_Hours",
+              "displayName": "Evacuation_Window_Hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Safe_Routes_Count",
+              "displayName": "Safe_Routes_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NWS_Warnings_Active",
+              "displayName": "NWS_Warnings_Active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Heavy_Rain_Forecast",
+              "displayName": "Heavy_Rain_Forecast",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Precipitation_Risk",
+              "displayName": "Precipitation_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence_Level",
+              "displayName": "Confidence_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Data_Quality",
+              "displayName": "Data_Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Primary_Data_Source",
+              "displayName": "Primary_Data_Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outcome_Verified",
+              "displayName": "Outcome_Verified",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Actual_Buffalo_6hr",
+              "displayName": "Actual_Buffalo_6hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Actual_Buffalo_12hr",
+              "displayName": "Actual_Buffalo_12hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Actual_Brays_6hr",
+              "displayName": "Actual_Brays_6hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Actual_Brays_12hr",
+              "displayName": "Actual_Brays_12hr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2528,
+        -56
+      ],
+      "id": "b3d77289-cc4f-45e3-b107-5891bf524d7a",
+      "name": "Append or update row in sheet",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "67545099-e5ef-4bd1-88bd-9518276ddab1",
+              "leftValue": "={{ new Date().getHours() }}",
+              "rightValue": "=6",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1216,
+        404
+      ],
+      "id": "ea105294-e9ed-4f04-997c-f0aaa56d065f",
+      "name": "Check If Daily Verification Time"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Predictions Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -992,
+        112
+      ],
+      "id": "008d0e38-e4d7-41d2-b034-7d11bb3e1735",
+      "name": "Get Yesterday's Predictions",
+      "notesInFlow": false,
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all predictions from sheet\nconst allPredictions = $input.all();\n\nif (!allPredictions || allPredictions.length === 0) {\n  return [];\n}\n\n// Calculate 24 hours ago (with 2-hour window)\nconst twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);\nconst twentyTwoHoursAgo = new Date(Date.now() - 22 * 60 * 60 * 1000);\nconst twentySixHoursAgo = new Date(Date.now() - 26 * 60 * 60 * 1000);\n\n// Filter predictions from 22-26 hours ago\nconst targetPredictions = allPredictions.filter(item => {\n  try {\n    const predictionTime = new Date(item.json.Timestamp);\n    \n    // Check if prediction is between 22-26 hours old\n    return predictionTime >= twentySixHoursAgo && predictionTime <= twentyTwoHoursAgo;\n  } catch (e) {\n    return false;\n  }\n});\n\nconsole.log(`Found ${targetPredictions.length} predictions from ~24 hours ago`);\n\n// Return filtered predictions\nreturn targetPredictions.length > 0 ? targetPredictions : [];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        668
+      ],
+      "id": "ebe60263-67ef-4424-b6be-c38c256498bc",
+      "name": "Filter Predictions from 24hrs Ago"
+    },
+    {
+      "parameters": {
+        "url": "https://waterservices.usgs.gov/nwis/iv/?format=json&sites=08074000,08075000&parameterCd=00065&siteStatus=active",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -544,
+        668
+      ],
+      "id": "47358589-fc42-430c-89af-ac7e9ae43bc6",
+      "name": "Fetch Current USGS for Verification"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get predictions from 24 hours ago\nconst predictions = $('Filter Predictions from 24hrs Ago').all();\n\nif (!predictions || predictions.length === 0) {\n  console.log(\"No predictions to verify\");\n  return [];\n}\n\n// Get current actual USGS data\nconst usgsData = $('Fetch Current USGS for Verification').first().json;\n\n// Parse USGS data\nlet timeSeries = null;\ntry {\n  if (Array.isArray(usgsData)) {\n    timeSeries = usgsData[0]?.value?.timeSeries;\n  } else if (usgsData?.value?.timeSeries) {\n    timeSeries = usgsData.value.timeSeries;\n  } else if (usgsData?.timeSeries) {\n    timeSeries = usgsData.timeSeries;\n  }\n} catch (e) {\n  console.log(\"Error parsing USGS data:\", e);\n  return [];\n}\n\nif (!timeSeries) {\n  console.log(\"No USGS time series data\");\n  return [];\n}\n\n// Extract current actual levels\nlet buffaloActual = null;\nlet braysActual = null;\n\nfor (const series of timeSeries) {\n  const siteCode = series.sourceInfo.siteCode[0].value;\n  const values = series.values[0].value;\n  const latestReading = values[values.length - 1];\n  const waterLevel = parseFloat(latestReading.value);\n  \n  if (siteCode === \"08074000\") {\n    buffaloActual = waterLevel;\n  } else if (siteCode === \"08075000\") {\n    braysActual = waterLevel;\n  }\n}\n\nconsole.log(`Current actual levels - Buffalo: ${buffaloActual}, Brays: ${braysActual}`);\n\n// Process each prediction and compare\nconst verifications = [];\n\nfor (const prediction of predictions) {\n  const pred = prediction.json;\n  \n  // We're verifying the 24-hour prediction\n  const buffaloPredicted = parseFloat(pred.Buffalo_Predicted_24hr) || 0;\n  const braysPredicted = parseFloat(pred.Brays_Predicted_24hr) || 0;\n  \n  // Calculate errors\n  const buffaloError = buffaloActual !== null ? Math.abs(buffaloActual - buffaloPredicted) : null;\n  const braysError = braysActual !== null ? Math.abs(braysActual - braysPredicted) : null;\n  \n  // Determine accuracy rating\n  let accuracyRating = \"UNKNOWN\";\n  if (buffaloError !== null && braysError !== null) {\n    const avgError = (buffaloError + braysError) / 2;\n    if (avgError <= 1) {\n      accuracyRating = \"EXCELLENT\";\n    } else if (avgError <= 2) {\n      accuracyRating = \"HIGH\";\n    } else if (avgError <= 3) {\n      accuracyRating = \"MEDIUM\";\n    } else if (avgError <= 5) {\n      accuracyRating = \"LOW\";\n    } else {\n      accuracyRating = \"POOR\";\n    }\n  }\n  \n  // Check if flooding occurred\n  const buffaloFlooded = buffaloActual > 40 ? \"YES\" : \"NO\";\n  const braysFlooded = braysActual > 40 ? \"YES\" : \"NO\";\n  \n  // Check if prediction was correct about flooding\n  const buffaloPredictedFlood = pred.Buffalo_Will_Flood === true || pred.Buffalo_Will_Flood === \"true\";\n  const braysPredictedFlood = pred.Brays_Will_Flood === true || pred.Brays_Will_Flood === \"true\";\n  \n  const buffaloCorrect = (buffaloPredictedFlood && buffaloFlooded === \"YES\") || \n                         (!buffaloPredictedFlood && buffaloFlooded === \"NO\");\n  const braysCorrect = (braysPredictedFlood && braysFlooded === \"YES\") || \n                       (!braysPredictedFlood && braysFlooded === \"NO\");\n  \n  verifications.push({\n    json: {\n      Verification_Date: new Date().toISOString(),\n      Report_ID: pred.Report_ID,\n      Hours_After_Prediction: 24,\n      Buffalo_Actual_Level: buffaloActual,\n      Brays_Actual_Level: braysActual,\n      Did_Buffalo_Flood: buffaloFlooded,\n      Did_Brays_Flood: braysFlooded,\n      Roads_Closed: \"Auto-verify pending\",\n      Evacuations_Ordered: \"N/A\",\n      Prediction_Accuracy: accuracyRating,\n      Notes: `Buffalo: predicted ${buffaloPredicted.toFixed(2)}ft, actual ${buffaloActual?.toFixed(2)}ft, error ${buffaloError?.toFixed(2)}ft (${buffaloCorrect ? 'CORRECT' : 'WRONG'} flood prediction). Brays: predicted ${braysPredicted.toFixed(2)}ft, actual ${braysActual?.toFixed(2)}ft, error ${braysError?.toFixed(2)}ft (${braysCorrect ? 'CORRECT' : 'WRONG'} flood prediction).`\n    }\n  });\n}\n\nconsole.log(`Created ${verifications.length} verification records`);\n\nreturn verifications;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        668
+      ],
+      "id": "633de79f-8ec0-46ef-9daf-e89ea2f4ddef",
+      "name": "Calculate Prediction Accuracy"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 491720632,
+          "mode": "list",
+          "cachedResultName": "Actual Outcomes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=491720632"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Report_ID"
+          ],
+          "schema": [
+            {
+              "id": "Verification_Date",
+              "displayName": "Verification_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Report_ID",
+              "displayName": "Report_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hours_After_Prediction",
+              "displayName": "Hours_After_Prediction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Buffalo_Actual_Level",
+              "displayName": "Buffalo_Actual_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Brays_Actual_Level",
+              "displayName": "Brays_Actual_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Did_Buffalo_Flood",
+              "displayName": "Did_Buffalo_Flood",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Did_Brays_Flood",
+              "displayName": "Did_Brays_Flood",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Roads_Closed",
+              "displayName": "Roads_Closed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Evacuations_Ordered",
+              "displayName": "Evacuations_Ordered",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Prediction_Accuracy",
+              "displayName": "Prediction_Accuracy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        668
+      ],
+      "id": "41fb5b42-7599-48f3-87ce-4efb07f4bcdb",
+      "name": "Append or update row in sheet1",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// SYSTEM HEALTH DATA COLLECTOR\n// Captures execution metrics for monitoring\n// ========================================\n\nconst now = new Date();\nconst executionId = $execution.id || \"UNKNOWN\";\nconst workflowId = $workflow.id || \"UNKNOWN\";\n\n// Get aggregator output (the report)\nconst report = $input.item.json;\n\n// Get data quality validator output\nlet validatorData = null;\ntry {\n  validatorData = $('Data Quality Validator').first().json;\n} catch (e) {\n  console.log(\"Could not access validator data\");\n}\n\n// Get transform USGS output\nlet transformData = null;\ntry {\n  transformData = $('Transform USGS Data').first().json;\n} catch (e) {\n  console.log(\"Could not access transform data\");\n}\n\n// Calculate execution metrics\nconst startTime = $execution.startedAt ? new Date($execution.startedAt) : now;\nconst executionTime = (now - startTime) / 1000; // seconds\n\n// Data source status\nconst usgsAvailable = validatorData?.sources_available?.usgs || false;\nconst noaaAvailable = validatorData?.sources_available?.noaa || false;\nconst nwsAlertsAvailable = validatorData?.sources_available?.nws_alerts || false;\nconst nwsForecastAvailable = validatorData?.sources_available?.nws_forecast || false;\n\n// Count available sources\nconst sourcesAvailable = [usgsAvailable, noaaAvailable, nwsAlertsAvailable, nwsForecastAvailable]\n  .filter(Boolean).length;\n\n// Data quality assessment\nconst dataQuality = validatorData?.validation?.dataQuality || \"UNKNOWN\";\nconst failoverMode = validatorData?.failover_mode || false;\nconst primarySource = validatorData?.data_source_to_use || \"UNKNOWN\";\n\n// Gauge data health\nconst gaugeCount = transformData?.gauges?.length || 0;\nconst gaugesHealthy = gaugeCount >= 2; // Should have at least 2 gauges\n\n// Get water levels for reasonableness check\nlet waterLevelsReasonable = true;\nlet maxWaterLevel = 0;\nlet minWaterLevel = 999;\n\nif (transformData?.gauges) {\n  for (const gauge of transformData.gauges) {\n    const level = gauge.current_water_level_ft || 0;\n    maxWaterLevel = Math.max(maxWaterLevel, level);\n    minWaterLevel = Math.min(minWaterLevel, level);\n    \n    // Check if levels are reasonable (0-100 ft for Houston)\n    if (level < 0 || level > 100) {\n      waterLevelsReasonable = false;\n    }\n  }\n}\n\n// Check if report was generated successfully\nconst reportGenerated = report?.report_id ? true : false;\nconst threatLevel = report?.executive_summary?.threat_level || \"UNKNOWN\";\n\n// Check for warnings in validator\nconst validationWarnings = validatorData?.validation?.warnings?.length || 0;\n\n// Determine overall health status\nlet healthStatus = \"HEALTHY\";\nlet healthScore = 100;\n\n// Deduct points for issues\nif (!usgsAvailable) healthScore -= 20;\nif (!noaaAvailable) healthScore -= 10;\nif (!nwsAlertsAvailable) healthScore -= 5;\nif (!nwsForecastAvailable) healthScore -= 5;\nif (failoverMode) healthScore -= 15;\nif (!gaugesHealthy) healthScore -= 20;\nif (!waterLevelsReasonable) healthScore -= 25;\nif (validationWarnings > 3) healthScore -= 10;\nif (executionTime > 90) healthScore -= 10; // Should complete in <90 sec\nif (!reportGenerated) healthScore -= 30;\n\n// Determine status based on score\nif (healthScore >= 80) {\n  healthStatus = \"HEALTHY\";\n} else if (healthScore >= 60) {\n  healthStatus = \"DEGRADED\";\n} else if (healthScore >= 40) {\n  healthStatus = \"WARNING\";\n} else {\n  healthStatus = \"CRITICAL\";\n}\n\n// Build health report\nconst healthReport = {\n  // Execution info\n  timestamp: now.toISOString(),\n  execution_id: executionId,\n  workflow_id: workflowId,\n  execution_time_seconds: parseFloat(executionTime.toFixed(2)),\n  \n  // Overall health\n  health_status: healthStatus,\n  health_score: healthScore,\n  \n  // Data source status\n  data_sources: {\n    usgs: usgsAvailable ? \"AVAILABLE\" : \"UNAVAILABLE\",\n    noaa: noaaAvailable ? \"AVAILABLE\" : \"UNAVAILABLE\",\n    nws_alerts: nwsAlertsAvailable ? \"AVAILABLE\" : \"UNAVAILABLE\",\n    nws_forecast: nwsForecastAvailable ? \"AVAILABLE\" : \"UNAVAILABLE\",\n    total_available: sourcesAvailable,\n    primary_source: primarySource,\n    failover_active: failoverMode\n  },\n  \n  // Data quality\n  data_quality: {\n    overall_quality: dataQuality,\n    validation_warnings: validationWarnings,\n    gauges_count: gaugeCount,\n    gauges_healthy: gaugesHealthy,\n    water_levels_reasonable: waterLevelsReasonable,\n    max_water_level: maxWaterLevel,\n    min_water_level: minWaterLevel\n  },\n  \n  // Report status\n  report_status: {\n    generated: reportGenerated,\n    report_id: report?.report_id || \"NONE\",\n    threat_level: threatLevel\n  },\n  \n  // Performance metrics\n  performance: {\n    execution_time_sec: parseFloat(executionTime.toFixed(2)),\n    performance_rating: executionTime < 60 ? \"EXCELLENT\" : executionTime < 90 ? \"GOOD\" : \"SLOW\"\n  },\n  \n  // Error indicators\n  errors: {\n    has_errors: healthStatus === \"CRITICAL\" || healthStatus === \"WARNING\",\n    error_summary: []\n  }\n};\n\n// Build error summary\nif (!usgsAvailable) healthReport.errors.error_summary.push(\"USGS unavailable\");\nif (!noaaAvailable) healthReport.errors.error_summary.push(\"NOAA unavailable\");\nif (failoverMode) healthReport.errors.error_summary.push(\"Running in failover mode\");\nif (!gaugesHealthy) healthReport.errors.error_summary.push(\"Insufficient gauge data\");\nif (!waterLevelsReasonable) healthReport.errors.error_summary.push(\"Water levels out of range\");\nif (validationWarnings > 3) healthReport.errors.error_summary.push(`${validationWarnings} validation warnings`);\nif (!reportGenerated) healthReport.errors.error_summary.push(\"Report generation failed\");\n\n// Pass through both report and health data\nreturn {\n  json: {\n    // Original report for downstream nodes\n    ...report,\n    \n    // Health data for logging\n    _health: healthReport\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -56
+      ],
+      "id": "56f88f52-e875-4eb3-9e27-22b3ae02067b",
+      "name": "Collect System Health Data\""
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M",
+          "mode": "list",
+          "cachedResultName": "Houston Flood Monitoring - Historical Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2042560573,
+          "mode": "list",
+          "cachedResultName": "System Health Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nDqkZwJv11XcCWNdbbv_OVe38JSizGmYyL_0rwe9O2M/edit#gid=2042560573"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Timestamp": "{{ $json._health.timestamp }}",
+            "Execution_ID": "{{ $json._health.execution_id }}",
+            "Health_Status": "{{ $json._health.health_status }}",
+            "Health_Score": "{{ $json._health.health_score }}",
+            "Execution_Time_Sec": "{{ $json._health.execution_time_seconds }}",
+            "USGS_Status": "{{ $json._health.data_sources.usgs }}",
+            "NOAA_Status": "{{ $json._health.data_sources.noaa }}",
+            "NWS_Alerts_Status": "{{ $json._health.data_sources.nws_alerts }}",
+            "NWS_Forecast_Status": "{{ $json._health.data_sources.nws_forecast }}",
+            "Sources_Available": "{{ $json._health.data_sources.total_available }}",
+            "Primary_Source": "{{ $json._health.data_sources.primary_source }}",
+            "Failover_Active": "{{ $json._health.data_sources.failover_active }}",
+            "Data_Quality": "{{ $json._health.data_quality.overall_quality }}",
+            "Validation_Warnings": "{{ $json._health.data_quality.validation_warnings }}",
+            "Gauges_Count": "{{ $json._health.data_quality.gauges_count }}",
+            "Water_Levels_OK": "{{ $json._health.data_quality.water_levels_reasonable }}",
+            "Max_Water_Level": "{{ $json._health.data_quality.max_water_level }}",
+            "Min_Water_Level": "{{ $json._health.data_quality.min_water_level }}",
+            "Report_Generated": "{{ $json._health.report_status.generated }}",
+            "Threat_Level": "{{ $json._health.report_status.threat_level }}",
+            "Has_Errors": "{{ $json._health.errors.has_errors }}",
+            "Error_Summary": "{{ $json._health.errors.error_summary.join(', ') }}"
+          },
+          "matchingColumns": [
+            "Execution_ID"
+          ],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Execution_ID",
+              "displayName": "Execution_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Health_Status",
+              "displayName": "Health_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Health_Score",
+              "displayName": "Health_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Execution_Time_Sec",
+              "displayName": "Execution_Time_Sec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "USGS_Status",
+              "displayName": "USGS_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NOAA_Status",
+              "displayName": "NOAA_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NWS_Alerts_Status",
+              "displayName": "NWS_Alerts_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NWS_Forecast_Status",
+              "displayName": "NWS_Forecast_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sources_Available",
+              "displayName": "Sources_Available",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Primary_Source",
+              "displayName": "Primary_Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Failover_Active",
+              "displayName": "Failover_Active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Data_Quality",
+              "displayName": "Data_Quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Validation_Warnings",
+              "displayName": "Validation_Warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Gauges_Count",
+              "displayName": "Gauges_Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Water_Levels_OK",
+              "displayName": "Water_Levels_OK",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Max_Water_Level",
+              "displayName": "Max_Water_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Min_Water_Level",
+              "displayName": "Min_Water_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Report_Generated",
+              "displayName": "Report_Generated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Threat_Level",
+              "displayName": "Threat_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Has_Errors",
+              "displayName": "Has_Errors",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Error_Summary",
+              "displayName": "Error_Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2080,
+        -56
+      ],
+      "id": "6d653374-4653-48e4-aba2-dec234212e5f",
+      "name": "Log System Health",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GllQ0AUuiJEEmNjN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format health data for Google Sheets logging\n// Extracts nested health data into flat structure\n\nconst healthData = $input.item.json._health;\nconst reportData = $input.item.json;\n\nreturn {\n  json: {\n    Timestamp: healthData.timestamp,\n    Execution_ID: healthData.execution_id,\n    Health_Status: healthData.health_status,\n    Health_Score: healthData.health_score,\n    Execution_Time_Sec: healthData.execution_time_seconds,\n    USGS_Status: healthData.data_sources.usgs,\n    NOAA_Status: healthData.data_sources.noaa,\n    NWS_Alerts_Status: healthData.data_sources.nws_alerts,\n    NWS_Forecast_Status: healthData.data_sources.nws_forecast,\n    Sources_Available: healthData.data_sources.total_available,\n    Primary_Source: healthData.data_sources.primary_source,\n    Failover_Active: healthData.data_sources.failover_active,\n    Data_Quality: healthData.data_quality.overall_quality,\n    Validation_Warnings: healthData.data_quality.validation_warnings,\n    Gauges_Count: healthData.data_quality.gauges_count,\n    Water_Levels_OK: healthData.data_quality.water_levels_reasonable,\n    Max_Water_Level: healthData.data_quality.max_water_level,\n    Min_Water_Level: healthData.data_quality.min_water_level,\n    Report_Generated: healthData.report_status.generated,\n    Threat_Level: healthData.report_status.threat_level,\n    Has_Errors: healthData.errors.has_errors,\n    Error_Summary: healthData.errors.error_summary.join(', ')\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -56
+      ],
+      "id": "6c71cb4b-3e62-44da-b760-1169bbafd56c",
+      "name": "Format Health Data for Sheet"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// DATA VALIDATION GATE\n// Ensures data quality before AI analysis\n// ========================================\n\nconst data = $input.item.json;\n\n// Validation checks\nconst validationResults = {\n  passed: true,\n  errors: [],\n  warnings: []\n};\n\n// ========================================\n// 1. CHECK GAUGES EXIST\n// ========================================\nif (!data.gauges || data.gauges.length === 0) {\n  validationResults.passed = false;\n  validationResults.errors.push(\"No gauge data available\");\n}\n\n// ========================================\n// 2. VALIDATE GAUGE DATA QUALITY\n// ========================================\nif (data.gauges && data.gauges.length > 0) {\n  for (const gauge of data.gauges) {\n    // Check water level is reasonable\n    if (gauge.current_water_level_ft < 0 || gauge.current_water_level_ft > 100) {\n      validationResults.warnings.push(\n        `${gauge.gauge_name}: Suspicious water level ${gauge.current_water_level_ft}ft`\n      );\n    }\n    \n    // Check rise rate is reasonable\n    if (gauge.rise_rate_ft_per_hour > 10) {\n      validationResults.warnings.push(\n        `${gauge.gauge_name}: Extreme rise rate ${gauge.rise_rate_ft_per_hour}ft/hr`\n      );\n    }\n    \n    // Check flood stage is set\n    if (!gauge.flood_stage_ft || gauge.flood_stage_ft === 0) {\n      validationResults.warnings.push(\n        `${gauge.gauge_name}: No flood stage defined`\n      );\n    }\n    \n    // Check timestamp exists\n    if (!gauge.timestamp) {\n      validationResults.warnings.push(\n        `${gauge.gauge_name}: No timestamp`\n      );\n    }\n  }\n}\n\n// ========================================\n// 3. CHECK ROADS EXIST\n// ========================================\nif (!data.roads || data.roads.length === 0) {\n  validationResults.warnings.push(\"No road data available\");\n}\n\n// ========================================\n// 4. CHECK CRITICAL FIELDS\n// ========================================\nif (!data.scenario) {\n  validationResults.warnings.push(\"No scenario field\");\n}\n\nif (!data.simulation_time) {\n  validationResults.warnings.push(\"No simulation_time field\");\n}\n\n// ========================================\n// 5. VALIDATE NWS CONTEXT (if exists)\n// ========================================\nif (data.nws_context) {\n  // Check confidence level is valid\n  const validConfidence = [\"VERY_HIGH\", \"HIGH\", \"MEDIUM\", \"LOW\", \"UNKNOWN\"];\n  if (!validConfidence.includes(data.nws_context.confidence_level)) {\n    validationResults.warnings.push(\n      `Invalid confidence_level: ${data.nws_context.confidence_level}`\n    );\n  }\n  \n  // Check data quality is valid\n  const validQuality = [\"EXCELLENT\", \"GOOD\", \"FAIR\", \"POOR\", \"UNKNOWN\"];\n  if (!validQuality.includes(data.nws_context.data_quality)) {\n    validationResults.warnings.push(\n      `Invalid data_quality: ${data.nws_context.data_quality}`\n    );\n  }\n}\n\n// ========================================\n// 6. DETERMINE ACTION\n// ========================================\n\nif (!validationResults.passed) {\n  // CRITICAL FAILURE - Cannot proceed\n  return [{\n    json: {\n      validation_failed: true,\n      validation_results: validationResults,\n      error_message: \"Data validation failed - cannot proceed with analysis\",\n      fallback_action: \"SEND_ERROR_ALERT\"\n    }\n  }];\n}\n\n// Data is valid (with possible warnings)\nreturn [{\n  json: {\n    ...data, // Pass through all original data\n    _validation: {\n      passed: true,\n      warnings: validationResults.warnings,\n      validated_at: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -56
+      ],
+      "id": "f5ef9016-cee6-4a97-9b1e-a434574b1dd6",
+      "name": "Data Validation Gate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "299fbff0-66ad-4d2c-ac8c-153436353556",
+              "leftValue": "={{ $json.validation_failed }}",
+              "rightValue": "TRUE",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        128,
+        -56
+      ],
+      "id": "0926c584-2a13-491d-9970-d72a02a5a157",
+      "name": "Data Valid?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "praptisanghavi@gmail.com",
+        "toEmail": "praptisanghavi@gmail.com",
+        "subject": "⚠️ DATA VALIDATION FAILED - Flood Monitoring System",
+        "html": "=<html>\n<body style=\"font-family: Arial, sans-serif;\">\n\n<div style=\"background: #ffebee; border-left: 5px solid #d32f2f; padding: 20px;\">\n  <h1>⚠️ DATA VALIDATION FAILED</h1>\n  <p><strong>Timestamp:</strong> {{ new Date().toISOString() }}</p>\n</div>\n\n<h2>Validation Errors:</h2>\n<ul>\n{{ $json.validation_results.errors.map(err => `<li style=\"color: #d32f2f;\">${err}</li>`).join('') }}\n</ul>\n\n{{ $json.validation_results.warnings.length > 0 ? `\n<h2>Warnings:</h2>\n<ul>\n${$json.validation_results.warnings.map(warn => `<li style=\"color: #ff9800;\">${warn}</li>`).join('')}\n</ul>\n` : '' }}\n\n<h2>Recommended Action:</h2>\n<p>{{ $json.fallback_action }}</p>\n\n<p style=\"color: #666; font-size: 12px; margin-top: 30px;\">\n  This is an automated alert from the Data Validation Gate.<br>\n  The system cannot proceed with AI analysis due to invalid data.<br>\n  Main workflow will retry on next execution (15 minutes).\n</p>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        240
+      ],
+      "id": "47a6350c-178e-4e20-b592-585cc531765c",
+      "name": "Send Data Validation Error Alert",
+      "webhookId": "db144c3c-d878-4710-a5cd-0e95673701de",
+      "retryOnFail": true,
+      "credentials": {
+        "smtp": {
+          "id": "evvnJSziPeFNhlCc",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CONTROLLER AGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTROLLER AGENT": {
+      "main": [
+        [
+          {
+            "node": "FLOOD PREDICTOR AGENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FLOOD PREDICTOR AGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FLOOD PREDICTOR AGENT": {
+      "main": [
+        [
+          {
+            "node": "ROAD SAFETY AGENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ROAD SAFETY AGENT",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROAD SAFETY AGENT": {
+      "main": [
+        [
+          {
+            "node": "EMERGENCY REPORT AGGREGATOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "USGS Real-Time Gauges": {
+      "main": [
+        [
+          {
+            "node": "Data Quality Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform USGS Data": {
+      "main": [
+        [
+          {
+            "node": "Data Validation Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Check If Daily Verification Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EMERGENCY REPORT AGGREGATOR": {
+      "main": [
+        [
+          {
+            "node": "Collect System Health Data\"",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Quality Validator": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NOAA Tide Gauges (Backup)": {
+      "main": [
+        [
+          {
+            "node": "Data Quality Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Transform USGS Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Transform NOAA Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform NOAA Data": {
+      "main": [
+        [
+          {
+            "node": "CONTROLLER AGENT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NWS Flood Alerts": {
+      "main": [
+        [
+          {
+            "node": "Data Quality Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NWS Weather Forecast": {
+      "main": [
+        [
+          {
+            "node": "Data Quality Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Data for Historical Log": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Daily Verification Time": {
+      "main": [
+        [
+          {
+            "node": "Get Yesterday's Predictions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NWS Weather Forecast",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NOAA Tide Gauges (Backup)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NWS Flood Alerts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "USGS Real-Time Gauges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Yesterday's Predictions": {
+      "main": [
+        [
+          {
+            "node": "Filter Predictions from 24hrs Ago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Predictions from 24hrs Ago": {
+      "main": [
+        [
+          {
+            "node": "Fetch Current USGS for Verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Current USGS for Verification": {
+      "main": [
+        [
+          {
+            "node": "Calculate Prediction Accuracy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Prediction Accuracy": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect System Health Data\"": {
+      "main": [
+        [
+          {
+            "node": "Format Health Data for Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log System Health": {
+      "main": [
+        [
+          {
+            "node": "Format Data for Historical Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Health Data for Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log System Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Validation Gate": {
+      "main": [
+        [
+          {
+            "node": "Data Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Valid?": {
+      "main": [
+        [
+          {
+            "node": "CONTROLLER AGENT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Data Validation Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b29822db-14af-4e94-8e79-63a6b9af8239",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "913a6a08d462734359eef49d07dc0310364f5c77dc31186a23e7594057f23cba"
+  },
+  "id": "wETE34eYCyjCW3Td",
+  "tags": []
+}
