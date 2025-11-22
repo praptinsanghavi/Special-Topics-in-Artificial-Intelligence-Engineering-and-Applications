@@ -2,8 +2,8 @@
 ## Evaluation Report
 
 **Course:** Agentic AI Systems  
-**Student:** [Your Name]  
-**Student ID:** [Your Student ID]  
+**Student:** Prapti Sanghavi 
+**Student ID:** 002058774  
 **Date:** November 21, 2025  
 
 ---
@@ -1322,7 +1322,5 @@ Controller ← Both Specialists
 
 **Report Version:** 1.0  
 **Date:** November 21, 2025  
-**Author:** [Your Name]  
+**Author:** Prapti Sanghavi  
 **Status:** Complete  
-**Total Pages:** ~30  
-**Total Words:** ~8,500
