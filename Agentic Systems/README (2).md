@@ -5,10 +5,10 @@
 An enterprise-grade, AI-powered flood monitoring and emergency response system for Houston, Texas. This autonomous system integrates real-time data from multiple government sources, employs three specialized AI agents for predictive analysis, and provides intelligent alerts with multi-tier escalation capabilities.
 
 **Assignment:** Agentic AI System Development  
-**Institution:** [Your University Name]  
-**Course:** [Course Code]  
-**Student:** [Your Name]  
-**Date:** November 2025  
+**Institution:** Northeastern Univeristy 
+**Course:** INFO7375 - ST: AI Engineering and Applications
+**Student:** Prapti Sanghavi  
+**Date:** November 21, 2025  
 **Due Date:** November 23, 2025
 
 ---
@@ -1036,11 +1036,11 @@ This project was created as part of university coursework.
 
 ## 👤 Author
 
-**Student Name:** [Your Name]  
-**Student ID:** [Your Student ID]  
-**Email:** [Your Email]  
-**Course:** [Course Name and Code]  
-**Institution:** [University Name]  
+**Student Name:** Prapti Sanghavi 
+**Student ID:** 002058774  
+**Email:** praptisanghavi@gmail.com
+**Course:** INFO7375 - ST: AI Engineering & Applications 
+**Institution:** Northeastern University  
 **Semester:** Fall 2025
 
 ---
@@ -1071,11 +1071,6 @@ This project was created as part of university coursework.
 - Review workflow logs in n8n dashboard
 - Check System Health Log in Google Sheets
 
-### For Questions:
-- Email: [Your Email]
-- Office Hours: [If applicable]
-- Discussion Forum: [If applicable]
-
 ---
 
 ## 🎯 Assignment Compliance
@@ -1090,8 +1085,6 @@ This project was created as part of university coursework.
 ✅ **Documentation:** Complete README.md provided  
 ✅ **Architecture Diagram:** Provided in separate file  
 ✅ **Brief Report:** Provided in separate file  
-
-### Project Grade Projection: **95-100/100** 🏆
 
 ---
 
