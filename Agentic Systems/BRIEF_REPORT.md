@@ -1871,12 +1871,11 @@ Thank you for the opportunity to build something meaningful. This project transf
 
 **Document Information:**
 
-**Author:** [Your Name]  
-**Student ID:** [Your Student ID]  
+**Author:** Prapti Sanghavi
+**Student ID:** 002058774  
 **Course:** Agentic AI Systems  
-**Institution:** [Your University]  
-**Submission Date:** November 21, 2025  
-**Word Count:** ~15,000 words  
+**Institution:** Northeastern University  
+**Submission Date:** November 21, 2025    
 **Version:** 1.0  
 
 ---
