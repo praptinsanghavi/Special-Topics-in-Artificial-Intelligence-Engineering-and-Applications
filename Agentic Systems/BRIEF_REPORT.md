@@ -3,8 +3,8 @@
 
 **Course:** Agentic AI Systems  
 **Assignment:** Multi-Agent System Development  
-**Student:** [Your Name]  
-**Student ID:** [Your Student ID]  
+**Student:** Prapti Sanghavi 
+**Student ID:** 002058774  
 **Date:** November 21, 2025  
 **Due Date:** November 23, 2025
 
