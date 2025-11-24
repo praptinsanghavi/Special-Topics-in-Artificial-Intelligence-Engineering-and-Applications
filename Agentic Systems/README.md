@@ -1091,3 +1091,7 @@ This project was created as part of university coursework.
 **Last Updated:** November 21, 2025  
 **Version:** 1.0  
 **Status:** Production Ready ✅
+
+---
+
+**YouTube:** https://youtu.be/_7RuHglYNoY
