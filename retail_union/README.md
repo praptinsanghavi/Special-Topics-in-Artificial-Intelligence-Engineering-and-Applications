@@ -20,23 +20,23 @@ The core idea is to empower small retailers with an **AI Copilot** (Deep Q-Netwo
 
 ```mermaid
 graph TD
-    User[Store Owner] -->|Interacts| UI[Streamlit Frontend]
+    User["Store Owner"] -->|Interacts| UI["Streamlit Frontend"]
     
     subgraph "Application Core"
-        UI -->|Input: Order/Hold| ERP[ERP Logic Layer]
-        ERP -->|Display| Dashboard[Financial Dashboard]
+        UI -->|"Input: Order/Hold"| ERP["ERP Logic Layer"]
+        ERP -->|Display| Dashboard["Financial Dashboard"]
     end
     
     subgraph "Intelligent Backend"
-        ERP -->|State (Inv, Cash)| Env[Kirana Gymnasium Env]
-        ERP -->|Query Recommendation| Agent[Procurement Agent (DQN)]
-        Agent -->|Load Weights| Model[erp_brain.pth]
-        Env -->|Reward Signal| Agent
+        ERP -->|"State (Inv, Cash)"| Env["Kirana Gymnasium Env"]
+        ERP -->|"Query Recommendation"| Agent["Procurement Agent (DQN)"]
+        Agent -->|"Load Weights"| Model["erp_brain.pth"]
+        Env -->|"Reward Signal"| Agent
     end
     
     subgraph "Data Lifecycle"
-        Env -->|Step| History[Session State History]
-        History -->|Visualized| Charts[Pandas/Altair Charts]
+        Env -->|Step| History["Session State History"]
+        History -->|Visualized| Charts["Pandas/Altair Charts"]
     end
 ```
 
