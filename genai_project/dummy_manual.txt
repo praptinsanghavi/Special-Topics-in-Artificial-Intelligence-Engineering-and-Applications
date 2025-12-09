@@ -1,0 +1,18 @@
+
+    Technical Manual: Industrial Hydraulic Pump X-200
+    
+    Section 1: Installation
+    To install the X-200, first ensure the base is level. Bolt the unit using 4x M10 bolts.
+    Connect the inlet hose to port A and the outlet to port B.
+    Torque all fittings to 45 Nm.
+    
+    Section 2: Operation
+    Turn the main switch to ON. The green LED indicates power.
+    If the red LED flashes, check the oil level.
+    The operating pressure range is 20-50 bar.
+    
+    Section 3: Troubleshooting
+    Error E1: Low Voltage. Check the power supply unit.
+    Error E2: High Temperature. Clean the cooling fins.
+    Noise: Grinding noise indicates bearing failure. Replace Part #B-199.
+    

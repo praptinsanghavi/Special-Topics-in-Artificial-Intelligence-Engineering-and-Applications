@@ -1,0 +1,119 @@
+:root {
+    --primary-color: #0F172A;
+    --secondary-color: #38BDF8;
+    --accent-color: #F472B6;
+    --text-color: #334155;
+    --bg-color: #F8FAFC;
+    --card-bg: #FFFFFF;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2rem 0;
+    text-align: center;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-top: 3rem;
+    text-align: center;
+}
+
+.hero {
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.hero p {
+    font-size: 1.25rem;
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    color: #64748B;
+}
+
+.btn {
+    display: inline-block;
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #0EA5E9;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.card {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card h3 {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.architecture {
+    text-align: center;
+    margin: 4rem 0;
+}
+
+.architecture img {
+    max-width: 100%;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+footer {
+    background-color: var(--primary-color);
+    color: #94A3B8;
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 4rem;
+}
+
+footer a {
+    color: var(--secondary-color);
+    text-decoration: none;
+}

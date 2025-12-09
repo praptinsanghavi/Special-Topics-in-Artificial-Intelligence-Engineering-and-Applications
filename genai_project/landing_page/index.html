@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Documentation Assistant | GenAI Project</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <p>Generative AI Architecture • Fall 2025</p>
+        </div>
+    </header>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Technical Documentation Assistant</h1>
+            <p>An intelligent, multimodal system that transforms static technical manuals into interactive knowledge bases. Powered by RAG, GPT-4o, and DALL-E 3.</p>
+            <a href="https://github.com/your-username/genai-project" class="btn">View on GitHub</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Core Capabilities</h2>
+        <div class="features">
+            <div class="card">
+                <h3>🧠 RAG Engine</h3>
+                <p>Retrieval-Augmented Generation engine using <strong>ChromaDB</strong> and <strong>LangChain</strong> to provide accurate, citation-backed answers from PDF manuals.</p>
+            </div>
+            <div class="card">
+                <h3>🎨 Multimodal Agents</h3>
+                <p>Integrated <strong>DALL-E 3</strong> agent that understands technical context and generates precise isometric diagrams and visual aids on demand.</p>
+            </div>
+            <div class="card">
+                <h3>🧪 Self-Evaluation</h3>
+                <p>Built-in <strong>Ragas</strong> pipeline that automatically generates synthetic test sets and evaluates system performance (Faithfulness, Recall) in real-time.</p>
+            </div>
+        </div>
+
+        <div class="architecture">
+            <h2>System Architecture</h2>
+            <p>A modular microservices architecture orchestrated by LangChain.</p>
+            <!-- Placeholder for architecture diagram -->
+            <div style="background: white; padding: 2rem; border-radius: 1rem; display: inline-block; border: 2px dashed #CBD5E1;">
+                <pre style="text-align: left; font-family: monospace; color: #334155;">
+USER -> STREAMLIT UI
+    -> RAG ENGINE (ChromaDB + GPT-4o)
+    -> VISUAL AGENT (DALL-E 3)
+    -> EVALUATOR (Ragas + GPT-4o)
+                </pre>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Developed by [Your Name] • <a href="https://github.com/your-username/genai-project">GitHub Repository</a></p>
+            <p>Submitted for L8 Systems Architect Assignment</p>
+        </div>
+    </footer>
+
+</body>
+</html>
