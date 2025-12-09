@@ -1,0 +1,20 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# Vector Database (Local)
+chroma_db/
+chroma.sqlite3
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+venv/
+env/
