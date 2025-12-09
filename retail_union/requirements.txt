@@ -1,0 +1,8 @@
+numpy
+pandas
+gymnasium
+matplotlib
+torch
+pettingzoo
+shimmy
+tqdm
