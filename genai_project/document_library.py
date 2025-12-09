@@ -83,7 +83,19 @@ class DocumentLibrary:
     
     def get_active_filepaths(self) -> List[str]:
         """Get filepaths of all active documents."""
-        return [doc["filepath"] for doc in self.get_active_documents() if os.path.exists(doc["filepath"])]
+        active_docs = self.get_active_documents()
+        print(f"DEBUG get_active_filepaths: Found {len(active_docs)} active documents")
+        
+        result = []
+        for doc in active_docs:
+            filepath = doc["filepath"]
+            exists = os.path.exists(filepath)
+            print(f"DEBUG: File '{filepath}' exists={exists}")
+            if exists:
+                result.append(filepath)
+        
+        print(f"DEBUG: Returning {len(result)} filepaths: {result}")
+        return result
     
     def _load_library(self) -> Dict:
         """Load library from JSON file."""

@@ -66,20 +66,21 @@ def main():
             else:
                 with st.spinner(f"Processing {uploaded_file.name}..."):
                     try:
-                        # Save file
+                        # Save file with absolute path
                         file_ext = uploaded_file.name.split(".")[-1]
                         temp_file = f"library_{uploaded_file.name}"
-                        with open(temp_file, "wb") as f:
+                        abs_temp_file = os.path.abspath(temp_file)  # Convert to absolute path
+                        with open(abs_temp_file, "wb") as f:
                             f.write(uploaded_file.getbuffer())
                         
                         # Process document
                         temp_rag = RAGEngine()
-                        docs = temp_rag.load_documents(temp_file)
+                        docs = temp_rag.load_documents(abs_temp_file)
                         
-                        # Add to library
+                        # Add to library with absolute path
                         st.session_state.doc_library.add_document(
                             filename=uploaded_file.name,
-                            filepath=temp_file,
+                            filepath=abs_temp_file,  # Use absolute path
                             num_chunks=len(docs)
                         )
                         
@@ -130,18 +131,24 @@ def main():
                         try:
                             # Get active file paths
                             active_paths = st.session_state.doc_library.get_active_filepaths()
+                            st.write(f"DEBUG: Loading {len(active_paths)} file(s): {active_paths}")
                             
                             # Initialize RAG with multiple documents
                             st.session_state.rag = RAGEngine()
                             all_docs = st.session_state.rag.load_multiple_documents(active_paths)
-                            st.session_state.rag.process_documents(all_docs)
+                            st.write(f"DEBUG: Loaded {len(all_docs)} raw documents")
                             
-                            st.success(f"✅ Loaded {len(active_docs)} document(s)!")
+                            st.session_state.rag.process_documents(all_docs)
+                            st.write(f"DEBUG: After processing, RAG has {len(st.session_state.rag.documents)} chunks")
+                            
+                            st.success(f"✅ Loaded {len(active_docs)} document(s) → {len(st.session_state.rag.documents)} chunks!")
                             st.session_state.doc_processed = True
                             st.rerun()
                         
                         except Exception as e:
                             st.error(f"Error: {str(e)}")
+                            import traceback
+                            st.code(traceback.format_exc())
                 
                 # Show active sources
                 if st.session_state.get('doc_processed', False):
@@ -335,12 +342,16 @@ def main():
                 with st.spinner("Generating test data and evaluating..."):
                     # Step 1: Generate Synthetic Test Data (Golden Dataset)
                     # We use the raw document chunks stored in the RAGEngine
-                    if hasattr(st.session_state.rag, 'documents') and st.session_state.rag.documents:
+                    if not hasattr(st.session_state, 'rag'):
+                        st.error("No RAG engine found. Please click 'Load Selected Documents' first.")
+                        scenarios = []
+                    elif not hasattr(st.session_state.rag, 'documents') or not st.session_state.rag.documents:
+                        st.error(f"No documents found. Please upload and process a file first. (Documents: {len(st.session_state.rag.documents) if hasattr(st.session_state.rag, 'documents') else 0})")
+                        scenarios = []
+                    else:
+                        st.info(f"Found {len(st.session_state.rag.documents)} document chunks. Generating test scenarios...")
                         generator = SyntheticDataGenerator()
                         scenarios = generator.generate_test_scenarios(st.session_state.rag.documents, test_size=3)
-                    else:
-                        st.error("No documents found. Please upload and process a file first.")
-                        scenarios = []
                     
                     if isinstance(scenarios, list) and len(scenarios) > 0:
                         questions = [s.get('scenario') for s in scenarios]
